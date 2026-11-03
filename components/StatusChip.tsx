@@ -36,7 +36,7 @@ export const StatusChip: React.FC<StatusChipProps> = ({ items }) => {
     >
       {/* Dropdown Popover shown ABOVE the chip when clicked */}
       {isOpen && (
-        <div className="absolute bottom-full left-0 mb-2 w-64 bg-white dark:bg-[#1C1C1E] rounded-2xl shadow-xl border border-neutral-200/90 dark:border-neutral-700 p-4 z-50 text-xs animate-in fade-in slide-in-from-bottom-2 duration-150">
+        <div className="absolute bottom-full left-0 mb-2 w-64 max-w-[calc(100vw-2rem)] bg-white dark:bg-[#1C1C1E] rounded-2xl shadow-xl border border-neutral-200/90 dark:border-neutral-700 p-4 z-50 text-xs animate-in fade-in slide-in-from-bottom-2 duration-150">
           <div className="flex items-center justify-between pb-2 mb-3 border-b border-neutral-100 dark:border-neutral-800">
             <span className="font-semibold text-neutral-800 dark:text-neutral-200">
               Progress Breakdown

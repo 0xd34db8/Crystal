@@ -13,6 +13,7 @@ import {
   deleteSyllabus,
   getApiKey,
   getAIConfig,
+  cleanupUnusedDrafts,
 } from "@/lib/storage";
 import { parseRawTextToSyllabus, createStarterSyllabus } from "@/lib/parser";
 import { formatSyllabusWithAI } from "@/lib/gemini";
@@ -67,6 +68,7 @@ export default function HomePage() {
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
 
   useEffect(() => {
+    cleanupUnusedDrafts();
     setSyllabi(getSavedSyllabi());
     setApiKey(getApiKey());
   }, []);
@@ -130,12 +132,14 @@ export default function HomePage() {
             resultSyllabus = parseRawTextToSyllabus(processed.text, title);
           } else {
             resultSyllabus = createStarterSyllabus(title);
+            resultSyllabus.isDraft = true;
           }
         } else if (activeTab === "text" && rawText.trim()) {
           resultSyllabus = parseRawTextToSyllabus(rawText.trim(), title);
         } else {
-          // No file or text provided: seamlessly create a blank syllabus
+          // No file or text provided: seamlessly create a blank syllabus marked as draft
           resultSyllabus = createStarterSyllabus(title);
+          resultSyllabus.isDraft = true;
         }
       } else {
         // AI Formatting mode: requires input to format
@@ -232,14 +236,14 @@ export default function HomePage() {
   );
 
   return (
-    <main className="h-screen w-full bg-[#F9F9F9] dark:bg-[#121212] flex flex-col overflow-hidden font-manrope">
+    <main className="min-h-screen lg:h-screen w-full bg-[#F9F9F9] dark:bg-[#121212] flex flex-col overflow-y-auto lg:overflow-hidden font-manrope">
       {/* Unified Window Header */}
       <AppHeader actions={headerActions} />
 
       {/* Main Content Layout: Split Panes (Import & Recents) */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 px-6 md:px-8 py-5 overflow-hidden min-h-0">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-5 md:gap-6 px-4 sm:px-6 md:px-8 py-4 sm:py-5 min-h-0 lg:overflow-hidden">
         {/* Left Column: Import New Syllabus */}
-        <div className="lg:col-span-5 xl:col-span-4 bg-white dark:bg-[#1C1C1E] rounded-[26px] border border-black/15 dark:border-white/10 shadow-xs p-6 flex flex-col justify-between overflow-y-auto">
+        <div className="lg:col-span-5 xl:col-span-5 bg-white dark:bg-[#1C1C1E] rounded-2xl md:rounded-[26px] border border-black/15 dark:border-white/10 shadow-xs p-5 sm:p-6 flex flex-col justify-between overflow-y-auto">
           <div className="space-y-5">
             <div>
               <div className="flex items-center justify-between">
@@ -440,7 +444,7 @@ export default function HomePage() {
         </div>
 
         {/* Right Column: Recently Worked on Files */}
-        <div className="lg:col-span-7 xl:col-span-8 bg-white dark:bg-[#1C1C1E] rounded-[26px] border border-black/15 dark:border-white/10 shadow-xs p-6 flex flex-col overflow-hidden">
+        <div className="lg:col-span-7 xl:col-span-7 bg-white dark:bg-[#1C1C1E] rounded-2xl md:rounded-[26px] border border-black/15 dark:border-white/10 shadow-xs p-5 sm:p-6 flex flex-col min-h-[300px] lg:min-h-0 overflow-hidden">
           <div className="flex items-center justify-between pb-4 border-b border-neutral-100 dark:border-neutral-800">
             <div>
               <h2 className="text-xl font-light text-neutral-900 dark:text-neutral-100 tracking-tight">

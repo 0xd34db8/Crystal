@@ -108,7 +108,7 @@ export function removeApiKey(): void {
 
 export const defaultRecentSyllabi: SyllabusData[] = [];
 
-export function getSavedSyllabi(): SyllabusData[] {
+export function getSavedSyllabi(includeDrafts: boolean = false): SyllabusData[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -123,16 +123,47 @@ export function getSavedSyllabi(): SyllabusData[] {
     if (cleaned.length !== parsed.length) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
     }
-    return cleaned;
+    if (includeDrafts) {
+      return cleaned;
+    }
+    // Return only actual syllabi with user content/modifications, omitting untouched blank drafts
+    return cleaned.filter(
+      (s) =>
+        !s.isDraft &&
+        !(
+          s.items?.length === 0 &&
+          (s.fileName === "New Syllabus" || s.fileName === "Untitled Syllabus")
+        ),
+    );
   } catch (e) {
     console.error("Failed to load syllabi from storage", e);
     return [];
   }
 }
 
+export function cleanupUnusedDrafts(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const parsed: SyllabusData[] = JSON.parse(raw);
+    const cleaned = parsed.filter(
+      (s) =>
+        !s.isDraft &&
+        !(
+          s.items?.length === 0 &&
+          (s.fileName === "New Syllabus" || s.fileName === "Untitled Syllabus")
+        ),
+    );
+    if (cleaned.length !== parsed.length) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
+    }
+  } catch {}
+}
+
 export function saveSyllabus(syllabus: SyllabusData) {
   if (typeof window === "undefined") return;
-  const list = getSavedSyllabi();
+  const list = getSavedSyllabi(true);
   const existingIdx = list.findIndex((s) => s.id === syllabus.id);
   let updatedList: SyllabusData[];
   if (existingIdx >= 0) {

@@ -32,4 +32,5 @@ export interface SyllabusData {
   fileName: string;
   lastModified: string;
   items: SyllabusItem[];
+  isDraft?: boolean;
 }

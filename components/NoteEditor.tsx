@@ -48,6 +48,7 @@ import {
   Plus,
   Trash2,
   X,
+  ArrowLeft,
   Loader2,
   AlertCircle,
   MessageSquare,
@@ -128,6 +129,7 @@ interface NoteEditorProps {
   onClose: () => void;
   courseTitle?: string;
   onRenameTopic?: (topicId: string, newTitle: string) => void;
+  onBackToTree?: () => void;
 }
 
 export const NoteEditor: React.FC<NoteEditorProps> = ({
@@ -137,6 +139,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   onClose,
   courseTitle,
   onRenameTopic,
+  onBackToTree,
 }) => {
   const [content, setContent] = useState<string>("");
   const [subComments, setSubComments] = useState<NoteComment[]>([]);
@@ -516,11 +519,24 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   // Handle "no notes yet" state
   if (!selectedTopic.hasNote && !content.trim()) {
     return (
-      <div className="h-full flex flex-col items-center justify-between p-8 font-manrope">
+      <div className="h-full flex flex-col items-center justify-between p-4 sm:p-6 md:p-8 font-manrope">
         <div className="w-full flex justify-between items-center text-xs text-neutral-400">
-          <span className="font-mono text-[11px] uppercase tracking-wider">
-            {selectedTopic.id}
-          </span>
+          <div className="flex items-center gap-2">
+            {onBackToTree && (
+              <button
+                type="button"
+                onClick={onBackToTree}
+                className="md:hidden flex items-center gap-1 px-2 py-1 text-xs text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+                title="Back to Topics"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span className="text-[11px] font-medium">Tree</span>
+              </button>
+            )}
+            <span className="font-mono text-[11px] uppercase tracking-wider">
+              {selectedTopic.id}
+            </span>
+          </div>
           <button
             onClick={onClose}
             className="p-1 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer"
@@ -652,10 +668,22 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   return (
     <div className="h-full flex flex-col overflow-hidden font-manrope">
       {/* Top Header: Centered Clickable / Inline Editable Topic Title */}
-      <div className="relative pt-5 pb-4 px-8 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
-        {/* Left: Status Selector Pill */}
-        <div className="flex items-center gap-1.5">
-          <span className="text-[11px] text-neutral-400 dark:text-neutral-500 uppercase tracking-wider font-medium">
+      <div className="relative pt-4 sm:pt-5 pb-3 sm:pb-4 px-3 sm:px-6 md:px-8 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between gap-2">
+        {/* Left: Mobile Back Button + Status Selector Pill */}
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 z-10">
+          {onBackToTree && (
+            <button
+              type="button"
+              onClick={onBackToTree}
+              className="md:hidden flex items-center gap-1 px-2 py-1 text-xs text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+              title="Back to Topics"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span className="hidden xs:inline text-[11px] font-medium">Tree</span>
+            </button>
+          )}
+
+          <span className="hidden sm:inline text-[11px] text-neutral-400 dark:text-neutral-500 uppercase tracking-wider font-medium">
             Status:
           </span>
           <select
@@ -663,7 +691,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             onChange={(e) =>
               onUpdateStatus(selectedTopic.id, e.target.value as TopicStatus)
             }
-            className={`text-xs font-medium py-1 px-2.5 rounded-full border outline-none cursor-pointer transition-colors ${
+            className={`text-xs font-medium py-1 px-2 sm:px-2.5 rounded-full border outline-none cursor-pointer transition-colors ${
               selectedTopic.status === "done"
                 ? "bg-blue-50 dark:bg-blue-950/60 border-blue-200 dark:border-blue-800 text-[#0066FF] dark:text-blue-400"
                 : selectedTopic.status === "partial"
@@ -682,7 +710,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
 
         {/* Centered Topic Title: Click to Rename inline */}
         {isEditingTitle ? (
-          <div className="absolute left-1/2 -translate-x-1/2 max-w-[55%] w-full flex items-center justify-center">
+          <div className="absolute left-1/2 -translate-x-1/2 max-w-[50%] xs:max-w-[55%] w-full flex items-center justify-center z-10">
             <input
               ref={titleInputRef}
               type="text"
@@ -697,30 +725,30 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
               }}
               onBlur={handleSaveTitle}
               autoFocus
-              className="text-2xl font-light text-neutral-900 dark:text-neutral-100 tracking-tight text-center bg-transparent border-b-2 border-blue-500 focus:outline-none px-2 py-0.5 w-full font-manrope"
+              className="text-lg sm:text-2xl font-light text-neutral-900 dark:text-neutral-100 tracking-tight text-center bg-transparent border-b-2 border-blue-500 focus:outline-none px-2 py-0.5 w-full font-manrope"
             />
           </div>
         ) : (
-          <div className="absolute left-1/2 -translate-x-1/2 max-w-[50%] flex items-center justify-center">
+          <div className="absolute left-1/2 -translate-x-1/2 max-w-[42%] xs:max-w-[48%] sm:max-w-[50%] flex items-center justify-center">
             <button
               type="button"
               onClick={() => {
                 setTitleValue(selectedTopic.title);
                 setIsEditingTitle(true);
               }}
-              className="group flex items-center gap-1.5 px-3 py-1 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer max-w-full"
+              className="group flex items-center gap-1.5 px-2 sm:px-3 py-1 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer max-w-full"
               title="Click to rename topic"
             >
-              <h2 className="text-2xl font-light text-neutral-900 dark:text-neutral-100 tracking-tight truncate">
+              <h2 className="text-base sm:text-xl md:text-2xl font-light text-neutral-900 dark:text-neutral-100 tracking-tight truncate">
                 {selectedTopic.title}
               </h2>
-              <Edit3 className="w-3.5 h-3.5 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+              <Edit3 className="w-3.5 h-3.5 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 hidden sm:block" />
             </button>
           </div>
         )}
 
         {/* Right Action: Close */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 z-10">
           <button
             onClick={onClose}
             className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors cursor-pointer"
@@ -733,7 +761,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
 
       {/* MS Word-level Rich Text Formatting Toolbar */}
       {editor && (
-        <div className="px-8 py-2 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-1 bg-neutral-50/70 dark:bg-[#18181A] text-neutral-600 dark:text-neutral-400 text-xs flex-wrap">
+        <div className="px-3 sm:px-6 md:px-8 py-2 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-1 bg-neutral-50/70 dark:bg-[#18181A] text-neutral-600 dark:text-neutral-400 text-xs overflow-x-auto no-scrollbar flex-nowrap sm:flex-wrap">
           {/* History: Undo / Redo */}
           <button
             type="button"
@@ -971,10 +999,10 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
 
       {/* Notion-style Floating Contextual Action for Pasted Image URLs */}
       {pendingEmbedUrl && (
-        <div className="mx-8 my-2 p-2.5 rounded-xl bg-blue-50/90 dark:bg-blue-950/70 border border-blue-200 dark:border-blue-800 flex items-center justify-between text-xs animate-in fade-in slide-in-from-top-1">
+        <div className="mx-3 sm:mx-6 md:mx-8 my-2 p-2 sm:p-2.5 rounded-xl bg-blue-50/90 dark:bg-blue-950/70 border border-blue-200 dark:border-blue-800 flex items-center justify-between text-xs animate-in fade-in slide-in-from-top-1">
           <div className="flex items-center gap-2 min-w-0">
             <span className="text-base select-none">🖼️</span>
-            <span className="text-neutral-600 dark:text-neutral-400 truncate max-w-[280px]">
+            <span className="text-neutral-600 dark:text-neutral-400 truncate max-w-[200px] sm:max-w-[280px]">
               Image URL:{" "}
               <span className="font-mono text-neutral-900 dark:text-neutral-200">
                 {pendingEmbedUrl}
@@ -985,14 +1013,14 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             <button
               type="button"
               onClick={handleEmbedPendingUrl}
-              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-2xs cursor-pointer"
+              className="px-2.5 sm:px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-2xs cursor-pointer"
             >
               Embed Image
             </button>
             <button
               type="button"
               onClick={() => setPendingEmbedUrl(null)}
-              className="px-2.5 py-1 text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-300 rounded-lg transition-colors cursor-pointer"
+              className="px-2 sm:px-2.5 py-1 text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-300 rounded-lg transition-colors cursor-pointer"
             >
               Keep as link
             </button>
@@ -1002,7 +1030,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
 
       {/* AI Error Notification Banner */}
       {aiError && (
-        <div className="px-8 py-2 bg-red-50 dark:bg-rose-950/50 border-b border-red-200 dark:border-rose-900 flex items-center justify-between text-xs text-red-700 dark:text-rose-300">
+        <div className="px-4 sm:px-6 md:px-8 py-2 bg-red-50 dark:bg-rose-950/50 border-b border-red-200 dark:border-rose-900 flex items-center justify-between text-xs text-red-700 dark:text-rose-300">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
             <span>{aiError}</span>
@@ -1018,7 +1046,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
 
       {/* Main Notion-Style Live Markdown Editing Canvas */}
       <div
-        className="flex-1 overflow-y-auto px-8 py-6 min-h-0 cursor-text"
+        className="flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 py-4 sm:py-6 min-h-0 cursor-text"
         onClick={() => {
           if (editor && !editor.isFocused) {
             editor.commands.focus();
@@ -1031,7 +1059,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       {/* Sub-sections Bottom Dock Panel with Eye Toggle */}
       <div className="border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50/70 dark:bg-[#18181A] transition-all flex flex-col flex-shrink-0">
         {/* Panel Header Bar */}
-        <div className="flex items-center justify-between px-8 py-2.5">
+        <div className="flex items-center justify-between px-4 sm:px-6 md:px-8 py-2 sm:py-2.5">
           <div className="flex items-center gap-3">
             {!isAddingReply && (
               <button
@@ -1068,7 +1096,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
 
         {/* Expandable sub-sections body */}
         {showSubSections && (
-          <div className="px-8 pb-4 pt-1 max-h-56 overflow-y-auto space-y-3">
+          <div className="px-4 sm:px-6 md:px-8 pb-3 sm:pb-4 pt-1 max-h-56 overflow-y-auto space-y-3">
             {/* Sub-comment Cards */}
             <div className="space-y-2.5">
               {subComments.map((comment) => (

@@ -26,17 +26,17 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   actions,
 }) => {
   return (
-    <header className="flex items-center justify-between px-8 py-3.5 bg-[#F9F9F9] dark:bg-[#121212] select-none font-manrope">
+    <header className="flex items-center justify-between px-4 sm:px-6 md:px-8 py-2.5 sm:py-3.5 bg-[#F9F9F9] dark:bg-[#121212] select-none font-manrope border-b border-black/5 dark:border-white/5 md:border-b-0">
       {/* Left: Crystal Logo + Title/FileName */}
-      <div className="flex items-center gap-4 min-w-0">
+      <div className="flex items-center gap-2.5 sm:gap-4 min-w-0 flex-1 mr-2">
         <Link href="/" title="Crystal Home" className="flex items-center flex-shrink-0">
-          <CrystalLogo className="w-14 h-[53px] hover:opacity-90 transition-opacity cursor-pointer drop-shadow-xs" />
+          <CrystalLogo className="w-10 h-[38px] sm:w-14 sm:h-[53px] hover:opacity-90 transition-opacity cursor-pointer drop-shadow-xs" />
         </Link>
 
         {titleElement ? (
           titleElement
         ) : (
-          <h1 className="text-3xl font-light tracking-tight text-neutral-900 dark:text-neutral-100 truncate">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-light tracking-tight text-neutral-900 dark:text-neutral-100 truncate">
             Crystal
           </h1>
         )}
@@ -44,7 +44,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
       {/* Right: Actions (pushed to the right position) */}
       {actions && (
-        <div className="flex items-center gap-3 md:gap-4 flex-shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-shrink-0">
           {actions}
         </div>
       )}

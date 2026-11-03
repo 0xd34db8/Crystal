@@ -28,8 +28,18 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                const stored = localStorage.getItem('crystal_theme');
-                if (stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                const stored = localStorage.getItem('crystal_theme') || 'system';
+                let isDark = false;
+                if (stored === 'system') {
+                  isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+                  document.documentElement.setAttribute('data-theme-setting', 'system');
+                } else {
+                  document.documentElement.setAttribute('data-theme', stored);
+                  document.documentElement.setAttribute('data-theme-setting', stored);
+                  isDark = stored === 'dark' || stored === 'nord' || stored === 'midnight' || stored === 'forest';
+                }
+                if (isDark) {
                   document.documentElement.classList.add('dark');
                 } else {
                   document.documentElement.classList.remove('dark');

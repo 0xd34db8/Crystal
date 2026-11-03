@@ -40,7 +40,9 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
   searchQuery = "",
 }) => {
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
-  const [addingSubtopicToId, setAddingSubtopicToId] = useState<string | null>(null);
+  const [addingSubtopicToId, setAddingSubtopicToId] = useState<string | null>(
+    null,
+  );
   const [subtopicInput, setSubtopicInput] = useState("");
   const [isAddingRoot, setIsAddingRoot] = useState(false);
   const [rootInput, setRootInput] = useState("");
@@ -262,7 +264,7 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
                 }}
                 className="w-full px-3 py-1 text-left flex items-center justify-between hover:bg-red-50 dark:hover:bg-rose-950/40 text-[#E53E3E] dark:text-rose-400 font-medium cursor-pointer"
               >
-                <span>Barely Done</span>
+                <span>Barely</span>
                 {item.status === "barely" && <Check className="w-3 h-3" />}
               </button>
 

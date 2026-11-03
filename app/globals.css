@@ -148,3 +148,142 @@ ul[data-type="taskList"] li[data-checked="true"] > div {
   background-color: #854d0e;
   color: #fef08a;
 }
+
+/* Horizontal scrollbar hiding utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Multitude Theme Palettes */
+/* Sepia Theme */
+[data-theme="sepia"] body,
+[data-theme="sepia"] main,
+[data-theme="sepia"] header {
+  background-color: #F7F2E7 !important;
+  color: #382F2D !important;
+}
+[data-theme="sepia"] .bg-white,
+[data-theme="sepia"] [class*="bg-white"],
+[data-theme="sepia"] .bg-\[\#F9F9F9\] {
+  background-color: #FCF9F2 !important;
+  border-color: #E2D7C3 !important;
+}
+[data-theme="sepia"] .bg-neutral-50\/70 {
+  background-color: #F3ECE0 !important;
+}
+[data-theme="sepia"] input,
+[data-theme="sepia"] select,
+[data-theme="sepia"] textarea {
+  background-color: #F5EFE3 !important;
+  border-color: #E2D7C3 !important;
+  color: #382F2D !important;
+}
+[data-theme="sepia"] .text-neutral-900,
+[data-theme="sepia"] .text-neutral-800,
+[data-theme="sepia"] .text-neutral-700 {
+  color: #382F2D !important;
+}
+[data-theme="sepia"] .text-neutral-500,
+[data-theme="sepia"] .text-neutral-400 {
+  color: #7D6F69 !important;
+}
+
+/* Nord Theme */
+[data-theme="nord"] body,
+[data-theme="nord"] main,
+[data-theme="nord"] header {
+  background-color: #242933 !important;
+  color: #ECEFF4 !important;
+}
+[data-theme="nord"] .bg-white,
+[data-theme="nord"] [class*="bg-white"],
+[data-theme="nord"] .dark\:bg-\[\#1C1C1E\],
+[data-theme="nord"] .dark\:bg-\[\#121212\],
+[data-theme="nord"] .dark\:bg-\[\#222225\],
+[data-theme="nord"] .dark\:bg-\[\#252528\] {
+  background-color: #2E3440 !important;
+  border-color: #434C5E !important;
+}
+[data-theme="nord"] .dark\:bg-\[\#18181A\] {
+  background-color: #292E39 !important;
+}
+[data-theme="nord"] input,
+[data-theme="nord"] select,
+[data-theme="nord"] textarea {
+  background-color: #3B4252 !important;
+  border-color: #4C566A !important;
+  color: #ECEFF4 !important;
+}
+[data-theme="nord"] .dark\:border-neutral-700,
+[data-theme="nord"] .dark\:border-neutral-800,
+[data-theme="nord"] .dark\:border-white\/10 {
+  border-color: #434C5E !important;
+}
+
+/* Midnight AMOLED Theme */
+[data-theme="midnight"] body,
+[data-theme="midnight"] main,
+[data-theme="midnight"] header {
+  background-color: #000000 !important;
+  color: #F3F4F6 !important;
+}
+[data-theme="midnight"] .bg-white,
+[data-theme="midnight"] [class*="bg-white"],
+[data-theme="midnight"] .dark\:bg-\[\#1C1C1E\],
+[data-theme="midnight"] .dark\:bg-\[\#121212\],
+[data-theme="midnight"] .dark\:bg-\[\#222225\],
+[data-theme="midnight"] .dark\:bg-\[\#252528\] {
+  background-color: #0A0A0C !important;
+  border-color: #1F222E !important;
+}
+[data-theme="midnight"] .dark\:bg-\[\#18181A\] {
+  background-color: #050507 !important;
+}
+[data-theme="midnight"] input,
+[data-theme="midnight"] select,
+[data-theme="midnight"] textarea {
+  background-color: #121318 !important;
+  border-color: #232736 !important;
+  color: #F3F4F6 !important;
+}
+[data-theme="midnight"] .dark\:border-neutral-700,
+[data-theme="midnight"] .dark\:border-neutral-800,
+[data-theme="midnight"] .dark\:border-white\/10 {
+  border-color: #1F222E !important;
+}
+
+/* Forest Theme */
+[data-theme="forest"] body,
+[data-theme="forest"] main,
+[data-theme="forest"] header {
+  background-color: #0F1713 !important;
+  color: #E3EDE7 !important;
+}
+[data-theme="forest"] .bg-white,
+[data-theme="forest"] [class*="bg-white"],
+[data-theme="forest"] .dark\:bg-\[\#1C1C1E\],
+[data-theme="forest"] .dark\:bg-\[\#121212\],
+[data-theme="forest"] .dark\:bg-\[\#222225\],
+[data-theme="forest"] .dark\:bg-\[\#252528\] {
+  background-color: #16231D !important;
+  border-color: #253B30 !important;
+}
+[data-theme="forest"] .dark\:bg-\[\#18181A\] {
+  background-color: #121D17 !important;
+}
+[data-theme="forest"] input,
+[data-theme="forest"] select,
+[data-theme="forest"] textarea {
+  background-color: #1D2E26 !important;
+  border-color: #2D473A !important;
+  color: #E3EDE7 !important;
+}
+[data-theme="forest"] .dark\:border-neutral-700,
+[data-theme="forest"] .dark\:border-neutral-800,
+[data-theme="forest"] .dark\:border-white\/10 {
+  border-color: #253B30 !important;
+}

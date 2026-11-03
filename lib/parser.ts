@@ -98,13 +98,14 @@ export function parseRawTextToSyllabus(
  * Creates a starter template syllabus for newly imported syllabi
  */
 export function createStarterSyllabus(
-  title: string = "Untitled Syllabus",
+  title: string = "New Syllabus",
 ): SyllabusData {
   return {
     id: `syllabus-${Date.now()}`,
-    fileName: title.trim() || "Untitled Syllabus",
+    fileName: title.trim() || "New Syllabus",
     lastModified: "Just now",
     items: [],
+    isDraft: true,
   };
 }
 
