@@ -172,22 +172,54 @@ export function addItemToTree(
 }
 
 /**
- * Exports syllabus data to a local .crystal JSON file download
+ * Exports syllabus data to a local .crystal file.
+ * Uses native showSaveFilePicker dialog when available to prompt user,
+ * and falls back to browser file download.
  */
-export function exportSyllabusAsFile(syllabus: SyllabusData): void {
+export async function exportSyllabusAsFile(
+  syllabus: SyllabusData,
+): Promise<void> {
   if (typeof window === "undefined") return;
-
-  const dataStr = JSON.stringify(syllabus, null, 2);
-  const blob = new Blob([dataStr], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
 
   const safeTitle = (syllabus.fileName || "syllabus")
     .trim()
     .replace(/[^a-zA-Z0-9_\-\s]/g, "")
     .replace(/\s+/g, "_");
+  const fileName = `${safeTitle}.crystal`;
+  const dataStr = JSON.stringify(syllabus, null, 2);
 
-  link.download = `${safeTitle}.crystal`;
+  // Modern browser File System Access API: prompts native Save File dialog
+  if ("showSaveFilePicker" in window) {
+    try {
+      const handle = await (window as any).showSaveFilePicker({
+        suggestedName: fileName,
+        types: [
+          {
+            description: "Crystal Syllabus File (*.crystal)",
+            accept: {
+              "application/json": [".crystal", ".json"],
+            },
+          },
+        ],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(dataStr);
+      await writable.close();
+      return;
+    } catch (err: any) {
+      if (err.name === "AbortError") {
+        // User explicitly cancelled the file picker dialog
+        return;
+      }
+      // If error occurs or not allowed, continue to fallback
+    }
+  }
+
+  // Fallback download trigger
+  const blob = new Blob([dataStr], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.download = fileName;
   link.href = url;
   document.body.appendChild(link);
   link.click();

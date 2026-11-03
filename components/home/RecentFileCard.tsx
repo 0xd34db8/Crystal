@@ -21,16 +21,16 @@ export const RecentFileCard: React.FC<RecentFileCardProps> = ({
   return (
     <div
       onClick={() => onOpen(file.id)}
-      className="group px-5 py-4 rounded-2xl border border-neutral-200/90 hover:border-neutral-400 hover:shadow-xs transition-all cursor-pointer bg-neutral-50/40 hover:bg-white flex items-center justify-between font-manrope"
+      className="group px-5 py-4 rounded-2xl border border-neutral-200/90 dark:border-neutral-800 hover:border-neutral-400 dark:hover:border-neutral-600 hover:shadow-xs transition-all cursor-pointer bg-neutral-50/40 dark:bg-[#222225] hover:bg-white dark:hover:bg-[#28282C] flex items-center justify-between font-manrope"
     >
       <div className="min-w-0 pr-4">
-        <h3 className="text-sm font-medium text-neutral-900 truncate group-hover:text-blue-600 transition-colors">
+        <h3 className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
           {file.fileName}
         </h3>
 
-        <div className="flex items-center gap-3 text-[11px] text-neutral-400 mt-1">
+        <div className="flex items-center gap-3 text-[11px] text-neutral-400 dark:text-neutral-500 mt-1">
           <span className="flex items-center gap-1">
-            <Clock className="w-3 h-3 text-neutral-400" />
+            <Clock className="w-3 h-3 text-neutral-400 dark:text-neutral-500" />
             {file.lastModified || "Recently"}
           </span>
           <span>•</span>
@@ -41,7 +41,7 @@ export const RecentFileCard: React.FC<RecentFileCardProps> = ({
       {/* Progress Chip matching Draft Style */}
       <div className="flex items-center gap-3 flex-shrink-0">
         <div
-          className="px-3 py-1 rounded-full bg-[#BAE6FD] text-neutral-900 border border-[#0284C7]/80 text-[11px] font-normal tracking-tight shadow-2xs"
+          className="px-3 py-1 rounded-full bg-[#BAE6FD] dark:bg-sky-950/80 text-neutral-900 dark:text-sky-200 border border-[#0284C7]/80 dark:border-sky-600/60 text-[11px] font-normal tracking-tight shadow-2xs"
           title="Progress (% completed)"
         >
           {stats.done.pct}% done
@@ -50,7 +50,7 @@ export const RecentFileCard: React.FC<RecentFileCardProps> = ({
         <button
           type="button"
           onClick={(e) => onDelete(e, file.id)}
-          className="p-1.5 rounded-full hover:bg-neutral-200 text-neutral-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+          className="p-1.5 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
           title="Remove from recents"
           aria-label={`Remove ${file.fileName} from recents`}
         >

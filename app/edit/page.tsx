@@ -29,7 +29,7 @@ import {
 
 export default function EditPage() {
   const [syllabus, setSyllabus] = useState<SyllabusData>(initialSyllabusData);
-  const [selectedTopicId, setSelectedTopicId] = useState<string>("unit-1-3-1");
+  const [selectedTopicId, setSelectedTopicId] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [apiKey, setApiKey] = useState<string>("");
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState<boolean>(false);
@@ -39,10 +39,27 @@ export default function EditPage() {
     const list = getSavedSyllabi();
     const activeId = getActiveSyllabusId();
     const active =
-      list.find((s) => s.id === activeId) || list[0] || initialSyllabusData;
+      (activeId ? list.find((s) => s.id === activeId) : null) ||
+      list[0] ||
+      initialSyllabusData;
     setSyllabus(active);
+    if (active.items && active.items.length > 0) {
+      setSelectedTopicId(active.items[0].id);
+    }
     setApiKey(getApiKey());
   }, []);
+
+  // Ctrl + S (or Cmd + S) prompts to save / export as .crystal, not .html
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        exportSyllabusAsFile(syllabus);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [syllabus]);
 
   const selectedTopic = findItemById(syllabus.items, selectedTopicId);
 
@@ -182,7 +199,7 @@ export default function EditPage() {
   };
 
   return (
-    <main className="h-screen w-full bg-[#F9F9F9] flex flex-col overflow-hidden font-manrope">
+    <main className="h-screen w-full bg-[#F9F9F9] dark:bg-[#121212] flex flex-col overflow-hidden font-manrope">
       {/* Top Header Bar */}
       <TopBar
         fileName={syllabus.fileName}
@@ -197,7 +214,7 @@ export default function EditPage() {
       {/* Content Area with Split Panes taking full screen */}
       <div className="flex-1 flex gap-5 px-6 py-3 overflow-hidden min-h-0">
         {/* Left Pane: Syllabus Tree Card */}
-        <div className="w-80 md:w-96 lg:w-[380px] flex-shrink-0 bg-white rounded-[26px] border border-black/15 shadow-xs flex flex-col overflow-hidden">
+        <div className="w-80 md:w-96 lg:w-[380px] flex-shrink-0 bg-white dark:bg-[#1C1C1E] rounded-[26px] border border-black/15 dark:border-white/10 shadow-xs flex flex-col overflow-hidden">
           <SyllabusTree
             items={syllabus.items}
             selectedTopicId={selectedTopicId}
@@ -213,7 +230,7 @@ export default function EditPage() {
         </div>
 
         {/* Right Pane: Main Note Editor Card */}
-        <div className="flex-1 bg-white rounded-[26px] border border-black/15 shadow-xs flex flex-col overflow-hidden">
+        <div className="flex-1 bg-white dark:bg-[#1C1C1E] rounded-[26px] border border-black/15 dark:border-white/10 shadow-xs flex flex-col overflow-hidden">
           <NoteEditor
             selectedTopic={selectedTopic}
             onSaveNote={handleSaveNote}
@@ -225,10 +242,10 @@ export default function EditPage() {
       </div>
 
       {/* Bottom Bar: Status Chip (Percentage of blue/done topics with popup) */}
-      <div className="px-8 py-3 flex items-center justify-between border-t border-black/5 bg-[#F9F9F9]">
+      <div className="px-8 py-3 flex items-center justify-between border-t border-black/5 dark:border-neutral-800 bg-[#F9F9F9] dark:bg-[#121212]">
         <StatusChip items={syllabus.items} />
 
-        <div className="text-[11px] text-neutral-400 font-light select-none">
+        <div className="text-[11px] text-neutral-400 dark:text-neutral-600 font-light select-none">
           Crystal
         </div>
       </div>

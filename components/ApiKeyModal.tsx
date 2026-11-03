@@ -162,17 +162,17 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-3xl border border-neutral-300 shadow-2xl w-full max-w-md p-6 space-y-4 font-manrope animate-in zoom-in-95 duration-150"
+        className="bg-white dark:bg-[#1C1C1E] rounded-3xl border border-neutral-300 dark:border-neutral-700 shadow-2xl w-full max-w-md p-6 space-y-4 font-manrope animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-800">
+            <div className="w-9 h-9 rounded-xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-800 dark:text-neutral-200">
               <Key className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-base font-medium text-neutral-900">
+              <h3 className="text-base font-medium text-neutral-900 dark:text-neutral-100">
                 API Key settings
               </h3>
             </div>
@@ -180,7 +180,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="w-7 h-7 rounded-full flex items-center justify-center text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors cursor-pointer"
+            className="w-7 h-7 rounded-full flex items-center justify-center text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
             title="Close"
           >
             <X className="w-4 h-4" />
@@ -189,13 +189,13 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
 
         {/* Provider Selector */}
         <div className="space-y-1.5">
-          <label className="text-[11px] font-semibold text-neutral-600 uppercase tracking-wider">
+          <label className="text-[11px] font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
             Provider
           </label>
           <select
             value={provider}
             onChange={(e) => handleProviderChange(e.target.value as LLMProvider)}
-            className="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-800 outline-none focus:border-neutral-500 font-manrope cursor-pointer"
+            className="w-full px-3 py-2 bg-neutral-50 dark:bg-[#252528] border border-neutral-200 dark:border-neutral-700 rounded-xl text-xs text-neutral-800 dark:text-neutral-100 outline-none focus:border-neutral-500 font-manrope cursor-pointer"
           >
             <option value="gemini">Google Gemini</option>
             <option value="openai">OpenAI</option>
@@ -208,7 +208,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
 
         {/* API Key Input */}
         <div className="space-y-1.5">
-          <label className="text-[11px] font-semibold text-neutral-600 uppercase tracking-wider">
+          <label className="text-[11px] font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
             API Key
           </label>
           <div className="relative flex items-center">
@@ -219,12 +219,12 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
               onKeyDown={handleKeyDown}
               autoFocus
               placeholder="Paste your API key"
-              className="w-full pl-3.5 pr-10 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-800 placeholder-neutral-400 outline-none focus:border-neutral-500 focus:bg-white font-mono"
+              className="w-full pl-3.5 pr-10 py-2.5 bg-neutral-50 dark:bg-[#252528] border border-neutral-200 dark:border-neutral-700 rounded-xl text-xs text-neutral-800 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 outline-none focus:border-neutral-500 focus:bg-white dark:focus:bg-[#2A2A2D] font-mono"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 text-neutral-400 hover:text-neutral-700 p-1 cursor-pointer"
+              className="absolute right-3 text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 p-1 cursor-pointer"
               title={showPassword ? "Hide key" : "Show key"}
             >
               {showPassword ? (
@@ -241,7 +241,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
           <button
             type="button"
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className="flex items-center gap-1 text-[11px] font-medium text-neutral-500 hover:text-neutral-800 cursor-pointer"
+            className="flex items-center gap-1 text-[11px] font-medium text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 cursor-pointer"
           >
             {showAdvanced ? (
               <ChevronUp className="w-3 h-3" />
@@ -253,10 +253,10 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
         </div>
 
         {showAdvanced && (
-          <div className="space-y-3 pt-1 border-t border-neutral-100">
+          <div className="space-y-3 pt-1 border-t border-neutral-100 dark:border-neutral-800">
             {/* Model Name */}
             <div className="space-y-1">
-              <label className="text-[11px] font-semibold text-neutral-600 uppercase tracking-wider">
+              <label className="text-[11px] font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
                 Model Name
               </label>
               <input
@@ -264,13 +264,13 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
                 placeholder={getDefaultModelForProvider(provider)}
-                className="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-800 outline-none focus:border-neutral-500 font-mono"
+                className="w-full px-3 py-2 bg-neutral-50 dark:bg-[#252528] border border-neutral-200 dark:border-neutral-700 rounded-xl text-xs text-neutral-800 dark:text-neutral-100 outline-none focus:border-neutral-500 font-mono"
               />
             </div>
 
             {/* Custom Base URL (if custom or openrouter or overridden) */}
             <div className="space-y-1">
-              <label className="text-[11px] font-semibold text-neutral-600 uppercase tracking-wider">
+              <label className="text-[11px] font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
                 Base URL (optional)
               </label>
               <input
@@ -282,7 +282,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
                     ? "http://localhost:11434/v1"
                     : "Default provider endpoint"
                 }
-                className="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-800 outline-none focus:border-neutral-500 font-mono"
+                className="w-full px-3 py-2 bg-neutral-50 dark:bg-[#252528] border border-neutral-200 dark:border-neutral-700 rounded-xl text-xs text-neutral-800 dark:text-neutral-100 outline-none focus:border-neutral-500 font-mono"
               />
             </div>
           </div>
@@ -294,11 +294,11 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
             type="button"
             onClick={handleTestKey}
             disabled={isTesting || !inputKey.trim()}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-neutral-300 hover:bg-neutral-50 text-[11px] font-medium text-neutral-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-[11px] font-medium text-neutral-700 dark:text-neutral-300 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isTesting ? (
               <>
-                <Loader2 className="w-3 h-3 animate-spin text-neutral-600" />
+                <Loader2 className="w-3 h-3 animate-spin text-neutral-600 dark:text-neutral-400" />
                 <span>Testing...</span>
               </>
             ) : (
@@ -309,11 +309,13 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
           {testResult && (
             <div
               className={`flex items-center gap-1.5 text-[11px] font-medium ${
-                testResult.success ? "text-emerald-700" : "text-red-600"
+                testResult.success
+                  ? "text-emerald-700 dark:text-emerald-400"
+                  : "text-red-600 dark:text-red-400"
               }`}
             >
               {testResult.success ? (
-                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
               ) : (
                 <AlertCircle className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
               )}
@@ -324,19 +326,19 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
 
         {/* Success Feedback */}
         {savedFeedback && (
-          <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
-            <Check className="w-3.5 h-3.5 text-emerald-600" />
+          <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2">
+            <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             <span>Saved</span>
           </div>
         )}
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between pt-2 border-t border-neutral-100">
+        <div className="flex items-center justify-between pt-2 border-t border-neutral-100 dark:border-neutral-800">
           {inputKey ? (
             <button
               type="button"
               onClick={handleRemove}
-              className="text-xs text-red-600 hover:text-red-700 font-medium cursor-pointer"
+              className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium cursor-pointer"
             >
               Remove
             </button>
@@ -348,14 +350,14 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-neutral-600 hover:bg-neutral-100 rounded-full transition-colors cursor-pointer"
+              className="px-4 py-2 text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={handleSave}
-              className="px-5 py-2 text-xs font-medium text-white bg-neutral-900 hover:bg-neutral-800 rounded-full transition-all shadow-xs cursor-pointer"
+              className="px-5 py-2 text-xs font-medium text-white dark:text-neutral-950 bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-200 rounded-full transition-all shadow-xs cursor-pointer"
             >
               Save Key
             </button>

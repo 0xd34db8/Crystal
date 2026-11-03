@@ -21,11 +21,14 @@ import {
   Image as ImageIcon,
   Quote,
   Eye,
+  EyeOff,
   Edit3,
   Columns,
   Plus,
+  Trash2,
   X,
   MessageSquare,
+  Sparkles,
   Loader2,
   AlertCircle,
 } from "lucide-react";
@@ -53,6 +56,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   const [replyInput, setReplyInput] = useState<string>("");
   const [replyTitle, setReplyTitle] = useState<string>("");
   const [isAddingReply, setIsAddingReply] = useState<boolean>(false);
+  const [showSubSections, setShowSubSections] = useState<boolean>(true);
   const [showImagePrompt, setShowImagePrompt] = useState<boolean>(false);
   const [imageUrl, setImageUrl] = useState<string>("");
 
@@ -76,14 +80,14 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
 
   if (!selectedTopic) {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-8 text-neutral-400 select-none font-manrope">
-        <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center mb-4 text-neutral-300">
+      <div className="h-full flex flex-col items-center justify-center p-8 text-neutral-400 dark:text-neutral-500 select-none font-manrope">
+        <div className="w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-4 text-neutral-300 dark:text-neutral-600">
           <MessageSquare className="w-8 h-8" />
         </div>
-        <h3 className="text-xl font-light text-neutral-600 mb-1">
+        <h3 className="text-xl font-light text-neutral-600 dark:text-neutral-300 mb-1">
           Select a topic
         </h3>
-        <p className="text-xs text-neutral-400 text-center max-w-xs">
+        <p className="text-xs text-neutral-400 dark:text-neutral-500 text-center max-w-xs">
           Click on any topic in the syllabus tree to view or start taking
           structured notes.
         </p>
@@ -206,12 +210,12 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
 
         {/* Centered Topic Title strictly following the draft visual */}
         <div className="text-center my-auto space-y-5 max-w-md">
-          <h2 className="text-2xl md:text-3xl font-light text-neutral-900 tracking-tight">
+          <h2 className="text-2xl md:text-3xl font-light text-neutral-900 dark:text-neutral-100 tracking-tight">
             {selectedTopic.title}
           </h2>
 
           <div className="space-y-4">
-            <p className="text-sm font-light text-neutral-500 italic">
+            <p className="text-sm font-light text-neutral-500 dark:text-neutral-400 italic">
               no notes yet
             </p>
 
@@ -229,7 +233,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                   };
                   onSaveNote(selectedTopic.id, newNote);
                 }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white rounded-full text-xs font-medium shadow-sm transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-200 text-white dark:text-neutral-950 rounded-full text-xs font-medium shadow-sm transition-all cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Create Note</span>
@@ -342,6 +346,12 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
     handleAutoSave(content, nextComments);
   };
 
+  const handleDeleteSubComment = (commentId: string) => {
+    const nextComments = subComments.filter((c) => c.id !== commentId);
+    setSubComments(nextComments);
+    handleAutoSave(content, nextComments);
+  };
+
   const handleInsertImage = () => {
     if (!imageUrl.trim()) return;
     insertFormatting(`\n![image](${imageUrl.trim()})\n`, "");
@@ -352,10 +362,10 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   return (
     <div className="h-full flex flex-col overflow-hidden font-manrope">
       {/* Top Header inside main pane: Title Centered as in Draft */}
-      <div className="relative pt-6 pb-4 px-8 border-b border-neutral-100 flex items-center justify-between">
+      <div className="relative pt-6 pb-4 px-8 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
         {/* Left: Status Selector Pill */}
         <div className="flex items-center gap-1.5">
-          <span className="text-[11px] text-neutral-400 uppercase tracking-wider font-medium">
+          <span className="text-[11px] text-neutral-400 dark:text-neutral-500 uppercase tracking-wider font-medium">
             Status:
           </span>
           <select
@@ -365,12 +375,12 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             }
             className={`text-xs font-medium py-1 px-2.5 rounded-full border outline-none cursor-pointer transition-colors ${
               selectedTopic.status === "done"
-                ? "bg-blue-50 border-blue-200 text-[#0066FF]"
+                ? "bg-blue-50 dark:bg-blue-950/60 border-blue-200 dark:border-blue-800 text-[#0066FF] dark:text-blue-400"
                 : selectedTopic.status === "partial"
-                  ? "bg-green-50 border-green-200 text-[#28A745]"
+                  ? "bg-green-50 dark:bg-emerald-950/60 border-green-200 dark:border-emerald-800 text-[#28A745] dark:text-emerald-400"
                   : selectedTopic.status === "barely"
-                    ? "bg-red-50 border-red-200 text-[#E53E3E]"
-                    : "bg-neutral-100 border-neutral-200 text-neutral-700"
+                    ? "bg-red-50 dark:bg-rose-950/60 border-red-200 dark:border-rose-800 text-[#E53E3E] dark:text-rose-400"
+                    : "bg-neutral-100 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300"
             }`}
           >
             <option value="untouched">Untouched</option>
@@ -382,7 +392,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
 
         {/* Centered Topic Title: 1:1 match with draft visual */}
         <div className="absolute left-1/2 -translate-x-1/2 text-center pointer-events-none max-w-[50%] truncate">
-          <h2 className="text-2xl font-light text-neutral-900 tracking-tight truncate">
+          <h2 className="text-2xl font-light text-neutral-900 dark:text-neutral-100 tracking-tight truncate">
             {selectedTopic.title}
           </h2>
         </div>
@@ -390,14 +400,14 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
         {/* Right Action Controls: Mode Switcher & Close */}
         <div className="flex items-center gap-2">
           {/* Segmented View Mode Controls */}
-          <div className="flex items-center p-0.5 bg-neutral-100 rounded-full border border-neutral-200 text-xs">
+          <div className="flex items-center p-0.5 bg-neutral-100 dark:bg-[#252528] rounded-full border border-neutral-200 dark:border-neutral-700 text-xs">
             <button
               type="button"
               onClick={() => setViewMode("edit")}
               className={`px-2.5 py-1 rounded-full font-medium transition-all cursor-pointer flex items-center gap-1 ${
                 viewMode === "edit"
-                  ? "bg-white text-neutral-900 shadow-2xs"
-                  : "text-neutral-500 hover:text-neutral-800"
+                  ? "bg-white dark:bg-[#1C1C1E] text-neutral-900 dark:text-neutral-100 shadow-2xs"
+                  : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200"
               }`}
               title="Edit markdown"
             >
@@ -409,8 +419,8 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
               onClick={() => setViewMode("split")}
               className={`px-2.5 py-1 rounded-full font-medium transition-all cursor-pointer hidden sm:flex items-center gap-1 ${
                 viewMode === "split"
-                  ? "bg-white text-neutral-900 shadow-2xs"
-                  : "text-neutral-500 hover:text-neutral-800"
+                  ? "bg-white dark:bg-[#1C1C1E] text-neutral-900 dark:text-neutral-100 shadow-2xs"
+                  : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200"
               }`}
               title="Side-by-side edit & live preview"
             >
@@ -422,8 +432,8 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
               onClick={() => setViewMode("preview")}
               className={`px-2.5 py-1 rounded-full font-medium transition-all cursor-pointer flex items-center gap-1 ${
                 viewMode === "preview"
-                  ? "bg-white text-neutral-900 shadow-2xs"
-                  : "text-neutral-500 hover:text-neutral-800"
+                  ? "bg-white dark:bg-[#1C1C1E] text-neutral-900 dark:text-neutral-100 shadow-2xs"
+                  : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200"
               }`}
               title="Rendered preview"
             >
@@ -434,7 +444,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
 
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors cursor-pointer"
+            className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors cursor-pointer"
             title="Close Note"
           >
             <X className="w-4 h-4" />
@@ -573,7 +583,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       )}
 
       {/* Main Content Area: Editor, Preview, or Split */}
-      <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
+      <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6 min-h-0">
         {viewMode === "preview" && (
           <MarkdownRenderer
             content={content}
@@ -590,14 +600,14 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
               handleAutoSave(e.target.value, subComments);
             }}
             placeholder="Write notes for this syllabus topic here (supports full markdown: # Heading, - list, **bold**, `code`, tables)..."
-            className="w-full h-72 resize-none bg-transparent outline-none font-mono text-xs leading-relaxed text-neutral-800 placeholder-neutral-400"
+            className="w-full h-full min-h-[300px] resize-none bg-transparent outline-none font-mono text-xs leading-relaxed text-neutral-800 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500"
           />
         )}
 
         {viewMode === "split" && (
-          <div className="grid grid-cols-2 gap-6 min-h-[300px]">
+          <div className="grid grid-cols-2 gap-6 min-h-[300px] h-full">
             {/* Left: Raw Markdown Editor */}
-            <div className="border-r border-neutral-200 pr-4">
+            <div className="border-r border-neutral-200 dark:border-neutral-800 pr-4">
               <textarea
                 id="note-textarea"
                 value={content}
@@ -606,7 +616,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                   handleAutoSave(e.target.value, subComments);
                 }}
                 placeholder="Write markdown notes..."
-                className="w-full h-full min-h-[280px] resize-none bg-transparent outline-none font-mono text-xs leading-relaxed text-neutral-800 placeholder-neutral-400"
+                className="w-full h-full min-h-[280px] resize-none bg-transparent outline-none font-mono text-xs leading-relaxed text-neutral-800 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500"
               />
             </div>
 
@@ -619,95 +629,135 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             </div>
           </div>
         )}
+      </div>
 
-        {/* Sub-sections / Comment Thread replies */}
-        <div className="pt-6 border-t border-neutral-100 space-y-4">
-          <div className="flex items-center justify-between">
+      {/* Sub-sections Bottom Dock Panel with Eye Toggle */}
+      <div className="border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50/70 dark:bg-[#18181A] transition-all flex flex-col flex-shrink-0">
+        {/* Panel Header Bar */}
+        <div className="flex items-center justify-between px-8 py-2.5">
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+              Sub-sections ({subComments.length})
+            </span>
             {!isAddingReply && (
               <button
-                onClick={() => setIsAddingReply(true)}
-                className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium cursor-pointer"
+                type="button"
+                onClick={() => {
+                  setIsAddingReply(true);
+                  setShowSubSections(true);
+                }}
+                className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Add Sub-section ({subComments.length})</span>
+                <span>Add Sub-section</span>
               </button>
             )}
           </div>
 
-          {/* Sub-comment Cards */}
-          <div className="space-y-3">
-            {subComments.map((comment) => (
-              <div
-                key={comment.id}
-                className="p-3.5 rounded-xl bg-neutral-50/80 border border-neutral-200/80 space-y-2 text-xs"
-              >
-                <div className="flex items-center justify-between text-[11px] text-neutral-500">
-                  <span className="font-semibold text-neutral-800">
-                    {comment.author}
-                  </span>
-                  <span>{comment.timestamp}</span>
-                </div>
-                <div className="text-neutral-700 whitespace-pre-wrap leading-relaxed">
-                  {comment.content}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Add Sub-section Form */}
-          {isAddingReply && (
-            <div className="p-3.5 rounded-xl bg-white border border-neutral-300 shadow-xs space-y-2 text-xs animate-in fade-in duration-150">
-              <input
-                type="text"
-                value={replyTitle}
-                onChange={(e) => setReplyTitle(e.target.value)}
-                placeholder="Sub-section title (e.g. Code Example, Summary)"
-                className="w-full px-2.5 py-1.5 border border-neutral-200 rounded text-xs outline-none focus:border-neutral-400 font-manrope"
-              />
-              <textarea
-                value={replyInput}
-                onChange={(e) => setReplyInput(e.target.value)}
-                placeholder="Write detailed sub-notes, or leave blank and click 'Explain with AI'..."
-                rows={3}
-                className="w-full px-2.5 py-1.5 border border-neutral-200 rounded text-xs outline-none focus:border-neutral-400 resize-none font-manrope"
-              />
-              <div className="flex items-center justify-between pt-1">
-                <button
-                  type="button"
-                  onClick={handleAiGenerateSubComment}
-                  disabled={isAiSubCommentGenerating}
-                  className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 cursor-pointer disabled:opacity-50"
-                >
-                  {isAiSubCommentGenerating ? (
-                    <>
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                      <span>Generating with AI...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Explain with AI</span>
-                    </>
-                  )}
-                </button>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setIsAddingReply(false)}
-                    className="px-3 py-1 rounded text-neutral-600 hover:bg-neutral-100 text-xs cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleAddSubComment}
-                    className="px-3 py-1 bg-neutral-900 text-white rounded text-xs font-medium hover:bg-neutral-800 cursor-pointer"
-                  >
-                    Add Sub-section
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Eye Icon to Hide / Show Sub-sections */}
+          <button
+            type="button"
+            onClick={() => setShowSubSections(!showSubSections)}
+            className="p-1.5 rounded-lg hover:bg-neutral-200/60 dark:hover:bg-neutral-800 text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200 transition-colors cursor-pointer"
+            title={showSubSections ? "Hide sub-sections" : "Show sub-sections"}
+            aria-label={showSubSections ? "Hide sub-sections" : "Show sub-sections"}
+          >
+            {showSubSections ? (
+              <Eye className="w-4 h-4" />
+            ) : (
+              <EyeOff className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+            )}
+          </button>
         </div>
+
+        {/* Expandable sub-sections body */}
+        {showSubSections && (
+          <div className="px-8 pb-4 pt-1 max-h-56 overflow-y-auto space-y-3">
+            {/* Sub-comment Cards */}
+            <div className="space-y-2.5">
+              {subComments.map((comment) => (
+                <div
+                  key={comment.id}
+                  className="p-3 rounded-xl bg-white dark:bg-[#222225] border border-neutral-200 dark:border-neutral-700 space-y-1.5 text-xs shadow-2xs"
+                >
+                  <div className="flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400">
+                    <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                      {comment.author}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span>{comment.timestamp}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteSubComment(comment.id)}
+                        className="text-neutral-400 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer p-0.5"
+                        title="Delete sub-section"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap leading-relaxed">
+                    {comment.content}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Add Sub-section Form */}
+            {isAddingReply && (
+              <div className="p-3.5 rounded-xl bg-white dark:bg-[#222225] border border-neutral-300 dark:border-neutral-700 shadow-xs space-y-2 text-xs animate-in fade-in duration-150">
+                <input
+                  type="text"
+                  value={replyTitle}
+                  onChange={(e) => setReplyTitle(e.target.value)}
+                  placeholder="Sub-section title (e.g. Code Example, Summary)"
+                  className="w-full px-2.5 py-1.5 border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-[#1C1C1E] text-neutral-800 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 rounded text-xs outline-none focus:border-neutral-400 dark:focus:border-neutral-500 font-manrope"
+                />
+                <textarea
+                  value={replyInput}
+                  onChange={(e) => setReplyInput(e.target.value)}
+                  placeholder="Write detailed sub-notes, or leave blank and click 'Explain with AI'..."
+                  rows={3}
+                  className="w-full px-2.5 py-1.5 border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-[#1C1C1E] text-neutral-800 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 rounded text-xs outline-none focus:border-neutral-400 dark:focus:border-neutral-500 resize-none font-manrope"
+                />
+                <div className="flex items-center justify-between pt-1">
+                  <button
+                    type="button"
+                    onClick={handleAiGenerateSubComment}
+                    disabled={isAiSubCommentGenerating}
+                    className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 cursor-pointer disabled:opacity-50"
+                  >
+                    {isAiSubCommentGenerating ? (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <span>Generating with AI...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Explain with AI</span>
+                      </>
+                    )}
+                  </button>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setIsAddingReply(false)}
+                      className="px-3 py-1 rounded text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 text-xs cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleAddSubComment}
+                      className="px-3 py-1 bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 rounded text-xs font-medium hover:bg-neutral-800 dark:hover:bg-neutral-200 cursor-pointer"
+                    >
+                      Add Sub-section
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <ApiKeyModal

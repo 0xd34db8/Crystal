@@ -97,67 +97,14 @@ export function parseRawTextToSyllabus(
 /**
  * Creates a starter template syllabus for newly imported syllabi
  */
-export function createStarterSyllabus(title: string): SyllabusData {
+export function createStarterSyllabus(
+  title: string = "Untitled Syllabus",
+): SyllabusData {
   return {
     id: `syllabus-${Date.now()}`,
-    fileName: title.trim() || "New Syllabus",
+    fileName: title.trim() || "Untitled Syllabus",
     lastModified: "Just now",
-    items: [
-      {
-        id: `unit-${Date.now()}-1`,
-        title: "UNIT I: Fundamentals",
-        status: "untouched",
-        hasNote: true,
-        isExpanded: true,
-        note: {
-          id: `note-1`,
-          title: "UNIT I: Fundamentals",
-          content: `### Welcome to ${title}\n\nStart outlining your notes, key takeaways, and definitions here.`,
-          updatedAt: "Just now",
-        },
-        children: [
-          {
-            id: `top-${Date.now()}-1`,
-            title: "Introduction & Scope",
-            status: "done",
-            hasNote: true,
-          },
-          {
-            id: `top-${Date.now()}-2`,
-            title: "Core Concepts & Terminology",
-            status: "partial",
-            hasNote: false,
-          },
-          {
-            id: `top-${Date.now()}-3`,
-            title: "Methods & Applications",
-            status: "untouched",
-            hasNote: false,
-          },
-        ],
-      },
-      {
-        id: `unit-${Date.now()}-2`,
-        title: "UNIT II: Advanced Topics",
-        status: "untouched",
-        hasNote: false,
-        isExpanded: false,
-        children: [
-          {
-            id: `top-${Date.now()}-4`,
-            title: "Theoretical Frameworks",
-            status: "untouched",
-            hasNote: false,
-          },
-          {
-            id: `top-${Date.now()}-5`,
-            title: "Practical Case Studies",
-            status: "untouched",
-            hasNote: false,
-          },
-        ],
-      },
-    ],
+    items: [],
   };
 }
 

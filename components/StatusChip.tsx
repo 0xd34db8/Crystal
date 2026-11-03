@@ -33,18 +33,18 @@ export const StatusChip: React.FC<StatusChipProps> = ({ items }) => {
     <div ref={containerRef} className="relative inline-block select-none font-manrope">
       {/* Dropdown Popover shown ABOVE the chip when clicked */}
       {isOpen && (
-        <div className="absolute bottom-full left-0 mb-2 w-64 bg-white rounded-2xl shadow-xl border border-neutral-200/90 p-4 z-50 text-xs animate-in fade-in slide-in-from-bottom-2 duration-150">
-          <div className="flex items-center justify-between pb-2 mb-3 border-b border-neutral-100">
-            <span className="font-semibold text-neutral-800">
+        <div className="absolute bottom-full left-0 mb-2 w-64 bg-white dark:bg-[#1C1C1E] rounded-2xl shadow-xl border border-neutral-200/90 dark:border-neutral-700 p-4 z-50 text-xs animate-in fade-in slide-in-from-bottom-2 duration-150">
+          <div className="flex items-center justify-between pb-2 mb-3 border-b border-neutral-100 dark:border-neutral-800">
+            <span className="font-semibold text-neutral-800 dark:text-neutral-200">
               Syllabus Progress Breakdown
             </span>
-            <span className="text-[11px] font-mono text-neutral-400">
+            <span className="text-[11px] font-mono text-neutral-400 dark:text-neutral-500">
               {stats.total} topics
             </span>
           </div>
 
           {/* Mini stacked progress bar */}
-          <div className="w-full h-2 rounded-full bg-neutral-100 overflow-hidden flex mb-3.5">
+          <div className="w-full h-2 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden flex mb-3.5">
             <div
               style={{ width: `${stats.done.pct}%` }}
               className="bg-[#0066FF] h-full transition-all duration-300"
@@ -64,39 +64,39 @@ export const StatusChip: React.FC<StatusChipProps> = ({ items }) => {
 
           {/* Detailed Breakdown List */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between text-neutral-700">
+            <div className="flex items-center justify-between text-neutral-700 dark:text-neutral-300">
               <span className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#0066FF]" />
-                <span className="text-neutral-900 font-medium">Done:</span>
+                <span className="text-neutral-900 dark:text-neutral-100 font-medium">Done:</span>
               </span>
               <span className="font-mono text-[11px]">
                 {stats.done.count} ({stats.done.pct}%)
               </span>
             </div>
 
-            <div className="flex items-center justify-between text-neutral-700">
+            <div className="flex items-center justify-between text-neutral-700 dark:text-neutral-300">
               <span className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#28A745]" />
-                <span className="text-neutral-900 font-medium">Partially:</span>
+                <span className="text-neutral-900 dark:text-neutral-100 font-medium">Partially:</span>
               </span>
               <span className="font-mono text-[11px]">
                 {stats.partial.count} ({stats.partial.pct}%)
               </span>
             </div>
 
-            <div className="flex items-center justify-between text-neutral-700">
+            <div className="flex items-center justify-between text-neutral-700 dark:text-neutral-300">
               <span className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#E53E3E]" />
-                <span className="text-neutral-900 font-medium">Barely:</span>
+                <span className="text-neutral-900 dark:text-neutral-100 font-medium">Barely:</span>
               </span>
               <span className="font-mono text-[11px]">
                 {stats.barely.count} ({stats.barely.pct}%)
               </span>
             </div>
 
-            <div className="flex items-center justify-between text-neutral-400">
+            <div className="flex items-center justify-between text-neutral-400 dark:text-neutral-500">
               <span className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-neutral-300" />
+                <span className="w-2 h-2 rounded-full bg-neutral-300 dark:bg-neutral-600" />
                 <span>Untouched:</span>
               </span>
               <span className="font-mono text-[11px]">
@@ -111,12 +111,12 @@ export const StatusChip: React.FC<StatusChipProps> = ({ items }) => {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="group inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#BAE6FD] text-neutral-900 border border-[#0284C7]/80 text-xs font-normal tracking-tight shadow-2xs hover:bg-[#A5DDFB] transition-all cursor-pointer"
+        className="group inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#BAE6FD] dark:bg-sky-950/80 text-neutral-900 dark:text-sky-200 border border-[#0284C7]/80 dark:border-sky-600/60 text-xs font-normal tracking-tight shadow-2xs hover:bg-[#A5DDFB] dark:hover:bg-sky-900/80 transition-all cursor-pointer"
         title="Click to view progress breakdown"
       >
         <span>{stats.done.pct}% done</span>
         <ChevronUp
-          className={`w-3.5 h-3.5 text-neutral-600 transition-transform duration-200 ${
+          className={`w-3.5 h-3.5 text-neutral-600 dark:text-neutral-400 transition-transform duration-200 ${
             isOpen ? "rotate-180" : ""
           }`}
         />

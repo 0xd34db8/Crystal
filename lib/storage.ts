@@ -106,88 +106,27 @@ export function removeApiKey(): void {
   localStorage.removeItem(AI_CONFIG_STORAGE);
 }
 
-export const defaultRecentSyllabi: SyllabusData[] = [
-  {
-    ...initialSyllabusData,
-    id: "syllabus-ml-101",
-    fileName: "Name of the file",
-    lastModified: "Today at 05:30 AM",
-  },
-  {
-    id: "syllabus-cloud-arch",
-    fileName: "AWS Cloud Practitioner",
-    lastModified: "Yesterday at 04:15 PM",
-    items: [
-      {
-        id: "cloud-u1",
-        title: "Module 1: Cloud Concepts & Overview",
-        status: "done",
-        hasNote: true,
-        isExpanded: true,
-        note: {
-          id: "note-cloud-1",
-          title: "Module 1: Cloud Concepts & Overview",
-          content: "### Cloud Architecture Notes\n\n- Infrastructure overview\n- Public vs Private vs Hybrid cloud",
-          updatedAt: "Yesterday",
-        },
-        children: [
-          {
-            id: "cloud-u1-1",
-            title: "Deployment Models (Public, Private, Hybrid)",
-            status: "done",
-            hasNote: true,
-          },
-          {
-            id: "cloud-u1-2",
-            title: "AWS Global Infrastructure: Regions & AZs",
-            status: "done",
-            hasNote: false,
-          },
-        ],
-      },
-      {
-        id: "cloud-u2",
-        title: "Module 2: Security & Compliance",
-        status: "partial",
-        hasNote: true,
-        isExpanded: false,
-        children: [
-          {
-            id: "cloud-u2-1",
-            title: "AWS Shared Responsibility Model",
-            status: "partial",
-            hasNote: true,
-          },
-          {
-            id: "cloud-u2-2",
-            title: "IAM Users, Groups & Roles",
-            status: "barely",
-            hasNote: false,
-          },
-        ],
-      },
-      {
-        id: "cloud-u3",
-        title: "Module 3: Billing & Pricing",
-        status: "untouched",
-        hasNote: false,
-      },
-    ],
-  },
-];
+export const defaultRecentSyllabi: SyllabusData[] = [];
 
 export function getSavedSyllabi(): SyllabusData[] {
-  if (typeof window === "undefined") return defaultRecentSyllabi;
+  if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultRecentSyllabi));
-      return defaultRecentSyllabi;
+      return [];
     }
-    return JSON.parse(raw);
+    const parsed: SyllabusData[] = JSON.parse(raw);
+    // Filter out legacy mock entries if previously stored
+    const cleaned = parsed.filter(
+      (s) => s.id !== "syllabus-ml-101" && s.id !== "syllabus-cloud-arch",
+    );
+    if (cleaned.length !== parsed.length) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
+    }
+    return cleaned;
   } catch (e) {
     console.error("Failed to load syllabi from storage", e);
-    return defaultRecentSyllabi;
+    return [];
   }
 }
 
@@ -215,9 +154,9 @@ export function saveSyllabus(syllabus: SyllabusData) {
   localStorage.setItem(ACTIVE_ID_KEY, syllabus.id);
 }
 
-export function getActiveSyllabusId(): string {
-  if (typeof window === "undefined") return defaultRecentSyllabi[0].id;
-  return localStorage.getItem(ACTIVE_ID_KEY) || defaultRecentSyllabi[0].id;
+export function getActiveSyllabusId(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(ACTIVE_ID_KEY) || null;
 }
 
 export function setActiveSyllabusId(id: string) {
@@ -226,7 +165,7 @@ export function setActiveSyllabusId(id: string) {
 }
 
 export function deleteSyllabus(id: string): SyllabusData[] {
-  if (typeof window === "undefined") return defaultRecentSyllabi;
+  if (typeof window === "undefined") return [];
   const list = getSavedSyllabi().filter((s) => s.id !== id);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
   return list;
