@@ -1,0 +1,9 @@
+feat: live markdown editor with rich text editing and inline topic renaming
+- Replace split view with TipTap live markdown editing canvas
+- Allow inline topic renaming on click in editor header and empty state
+- Add Word-level text formatting toolbar with styles, headings, lists, and alignment
+- Support direct clipboard image paste via Ctrl+V and drag-and-drop
+- Add native Notion-style floating contextual embed prompt for image URLs
+- Add keyboard shortcuts for formatting, headings, lists, and text alignment
+- Update progress breakdown calculation to weight top-level topics
+

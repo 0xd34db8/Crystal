@@ -1,37 +1,125 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   SyllabusItem,
   TopicNote,
   NoteComment,
   TopicStatus,
 } from "@/types/syllabus";
-import { MarkdownRenderer } from "./MarkdownRenderer";
 import { ApiKeyModal } from "./ApiKeyModal";
 import { getApiKey } from "@/lib/storage";
 import { generateNotesWithAI, generateSubCommentWithAI } from "@/lib/ai";
+import { useEditor, EditorContent } from "@tiptap/react";
+import { Extension } from "@tiptap/core";
+import StarterKit from "@tiptap/starter-kit";
+import Underline from "@tiptap/extension-underline";
+import TaskList from "@tiptap/extension-task-list";
+import TaskItem from "@tiptap/extension-task-item";
+import Highlight from "@tiptap/extension-highlight";
+import TextAlign from "@tiptap/extension-text-align";
+import Image from "@tiptap/extension-image";
+import Link from "@tiptap/extension-link";
+import Placeholder from "@tiptap/extension-placeholder";
+import { Markdown } from "tiptap-markdown";
 import {
   Bold,
   Italic,
-  Heading2,
+  Underline as UnderlineIcon,
+  Strikethrough,
+  Highlighter,
+  Code,
   List,
   ListOrdered,
-  Code,
-  Image as ImageIcon,
+  CheckSquare,
   Quote,
+  FileCode,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignJustify,
+  Minus,
+  RemoveFormatting,
+  Undo2,
+  Redo2,
   Eye,
   EyeOff,
   Edit3,
-  Columns,
   Plus,
   Trash2,
   X,
-  MessageSquare,
-  Sparkles,
   Loader2,
   AlertCircle,
+  MessageSquare,
 } from "lucide-react";
+
+// Markdown serialization extensions to cleanly bridge TipTap nodes to standard markdown strings
+const CustomImage = Image.extend({
+  addStorage() {
+    return {
+      markdown: {
+        serialize(state: any, node: any) {
+          state.write(
+            `![${state.esc(node.attrs.alt || "")}](${node.attrs.src}${
+              node.attrs.title ? ` "${state.esc(node.attrs.title)}"` : ""
+            })`,
+          );
+        },
+        parse: {},
+      },
+    };
+  },
+});
+
+const CustomUnderline = Underline.extend({
+  addStorage() {
+    return {
+      markdown: {
+        serialize: {
+          open: "<u>",
+          close: "</u>",
+        },
+      },
+    };
+  },
+});
+
+const CustomHighlight = Highlight.extend({
+  addStorage() {
+    return {
+      markdown: {
+        serialize: {
+          open: "==",
+          close: "==",
+        },
+      },
+    };
+  },
+});
+
+const CustomShortcuts = Extension.create({
+  name: "customShortcuts",
+  addKeyboardShortcuts() {
+    return {
+      "Mod-Shift-s": () => this.editor.commands.toggleStrike(),
+      "Mod-Shift-S": () => this.editor.commands.toggleStrike(),
+      "Mod-Shift-l": () => this.editor.commands.setTextAlign("left"),
+      "Mod-Shift-L": () => this.editor.commands.setTextAlign("left"),
+      "Mod-Shift-e": () => this.editor.commands.setTextAlign("center"),
+      "Mod-Shift-E": () => this.editor.commands.setTextAlign("center"),
+      "Mod-Shift-r": () => this.editor.commands.setTextAlign("right"),
+      "Mod-Shift-R": () => this.editor.commands.setTextAlign("right"),
+      "Mod-Shift-j": () => this.editor.commands.setTextAlign("justify"),
+      "Mod-Shift-J": () => this.editor.commands.setTextAlign("justify"),
+      "Mod-Shift-9": () => this.editor.commands.toggleTaskList(),
+    };
+  },
+});
+
+const getEditorMarkdown = (ed: any): string => {
+  if (!ed) return "";
+  return (ed.storage as any)?.markdown?.getMarkdown?.() ?? "";
+};
 
 interface NoteEditorProps {
   selectedTopic: SyllabusItem | null;
@@ -39,6 +127,7 @@ interface NoteEditorProps {
   onUpdateStatus: (topicId: string, status: TopicStatus) => void;
   onClose: () => void;
   courseTitle?: string;
+  onRenameTopic?: (topicId: string, newTitle: string) => void;
 }
 
 export const NoteEditor: React.FC<NoteEditorProps> = ({
@@ -47,18 +136,22 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   onUpdateStatus,
   onClose,
   courseTitle,
+  onRenameTopic,
 }) => {
   const [content, setContent] = useState<string>("");
   const [subComments, setSubComments] = useState<NoteComment[]>([]);
-  const [viewMode, setViewMode] = useState<"edit" | "preview" | "split">(
-    "edit",
-  );
   const [replyInput, setReplyInput] = useState<string>("");
   const [replyTitle, setReplyTitle] = useState<string>("");
   const [isAddingReply, setIsAddingReply] = useState<boolean>(false);
   const [showSubSections, setShowSubSections] = useState<boolean>(true);
-  const [showImagePrompt, setShowImagePrompt] = useState<boolean>(false);
-  const [imageUrl, setImageUrl] = useState<string>("");
+
+  // Topic Inline Renaming
+  const [isEditingTitle, setIsEditingTitle] = useState<boolean>(false);
+  const [titleValue, setTitleValue] = useState<string>("");
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  // Notion-style Image URL Embed Pill
+  const [pendingEmbedUrl, setPendingEmbedUrl] = useState<string | null>(null);
 
   // AI Generation State
   const [isAiGenerating, setIsAiGenerating] = useState<boolean>(false);
@@ -67,38 +160,199 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   const [aiError, setAiError] = useState<string | null>(null);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState<boolean>(false);
 
+  // Stable references for autosave without closure lag
+  const selectedTopicRef = useRef(selectedTopic);
+  selectedTopicRef.current = selectedTopic;
+
+  const onSaveNoteRef = useRef(onSaveNote);
+  onSaveNoteRef.current = onSaveNote;
+
+  const subCommentsRef = useRef(subComments);
+  subCommentsRef.current = subComments;
+
+  const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const debounceSave = (updatedMarkdown: string) => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+    }
+    saveTimerRef.current = setTimeout(() => {
+      if (!selectedTopicRef.current) return;
+      const topic = selectedTopicRef.current;
+      const updatedNote: TopicNote = {
+        id: topic.note?.id || `note-${topic.id}`,
+        title: topic.title,
+        content: updatedMarkdown,
+        subComments: subCommentsRef.current,
+        updatedAt: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      };
+      onSaveNoteRef.current(topic.id, updatedNote);
+    }, 350);
+  };
+
+  // TipTap Rich Live Markdown Editor
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: {
+          levels: [1, 2, 3],
+        },
+        bulletList: {
+          keepMarks: true,
+          keepAttributes: false,
+        },
+        orderedList: {
+          keepMarks: true,
+          keepAttributes: false,
+        },
+      }),
+      CustomUnderline,
+      TaskList,
+      TaskItem.configure({
+        nested: true,
+      }),
+      CustomHighlight.configure({
+        multicolor: false,
+      }),
+      TextAlign.configure({
+        types: ["heading", "paragraph"],
+      }),
+      CustomImage.configure({
+        inline: false,
+        allowBase64: true,
+      }),
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+      }),
+      Placeholder.configure({
+        placeholder:
+          "Start writing notes, or use markdown shortcuts (# for heading, - for list, [ ] for todo)...",
+      }),
+      CustomShortcuts,
+      Markdown.configure({
+        html: true,
+        tightLists: true,
+        bulletListMarker: "-",
+      }),
+    ],
+    content: selectedTopic?.note?.content || "",
+    immediatelyRender: false,
+    editorProps: {
+      attributes: {
+        class:
+          "prose dark:prose-invert max-w-none focus:outline-none min-h-[350px] text-sm leading-relaxed text-neutral-800 dark:text-neutral-200",
+      },
+      handlePaste: (view, event) => {
+        // 1. Direct image paste from clipboard via Ctrl+V
+        const items = Array.from(event.clipboardData?.items || []);
+        const imageItem = items.find((item) => item.type.startsWith("image/"));
+        if (imageItem) {
+          event.preventDefault();
+          const file = imageItem.getAsFile();
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const src = e.target?.result as string;
+              if (src) {
+                const { schema } = view.state;
+                const node = schema.nodes.image.create({ src });
+                const transaction = view.state.tr.replaceSelectionWith(node);
+                view.dispatch(transaction);
+              }
+            };
+            reader.readAsDataURL(file);
+            return true;
+          }
+        }
+
+        // 2. Notion-style image URL embed detection
+        const pastedText = event.clipboardData?.getData("text/plain")?.trim();
+        if (
+          pastedText &&
+          /^https?:\/\/.+\.(png|jpe?g|gif|webp|svg|bmp|avif)(\?.*)?$/i.test(
+            pastedText,
+          )
+        ) {
+          setPendingEmbedUrl(pastedText);
+        }
+
+        return false;
+      },
+      handleDrop: (view, event, slice, moved) => {
+        if (!moved && event.dataTransfer?.files?.length) {
+          const file = event.dataTransfer.files[0];
+          if (file.type.startsWith("image/")) {
+            event.preventDefault();
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const src = e.target?.result as string;
+              if (src) {
+                const { schema } = view.state;
+                const node = schema.nodes.image.create({ src });
+                const transaction = view.state.tr.replaceSelectionWith(node);
+                view.dispatch(transaction);
+              }
+            };
+            reader.readAsDataURL(file);
+            return true;
+          }
+        }
+        return false;
+      },
+    },
+    onUpdate: ({ editor: ed }) => {
+      const markdown = getEditorMarkdown(ed);
+      setContent(markdown);
+      debounceSave(markdown);
+    },
+  });
+
+  // Sync state and editor content when selected topic changes
   useEffect(() => {
-    if (selectedTopic && selectedTopic.note) {
-      setContent(selectedTopic.note.content || "");
-      setSubComments(selectedTopic.note.subComments || []);
+    if (selectedTopic) {
+      setTitleValue(selectedTopic.title);
+      setIsEditingTitle(false);
+      const noteContent = selectedTopic.note?.content || "";
+      setContent(noteContent);
+      setSubComments(selectedTopic.note?.subComments || []);
+      if (editor) {
+        const currentMd = getEditorMarkdown(editor);
+        if (currentMd !== noteContent) {
+          editor.commands.setContent(noteContent);
+        }
+      }
     } else {
       setContent("");
       setSubComments([]);
+      if (editor) {
+        editor.commands.setContent("");
+      }
     }
     setAiError(null);
-  }, [selectedTopic]);
+    setPendingEmbedUrl(null);
+  }, [selectedTopic?.id, selectedTopic?.note?.updatedAt, editor]);
 
-  if (!selectedTopic) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center p-8 text-neutral-400 dark:text-neutral-500 select-none font-manrope">
-        <div className="w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-4 text-neutral-300 dark:text-neutral-600">
-          <MessageSquare className="w-8 h-8" />
-        </div>
-        <h3 className="text-xl font-light text-neutral-600 dark:text-neutral-300 mb-1">
-          Select a topic
-        </h3>
-        <p className="text-xs text-neutral-400 dark:text-neutral-500 text-center max-w-xs">
-          Click on any topic in the syllabus tree to view or start taking
-          structured notes.
-        </p>
-      </div>
-    );
-  }
+  // Handle topic inline renaming
+  const handleSaveTitle = () => {
+    const trimmed = titleValue.trim();
+    if (selectedTopic && trimmed && trimmed !== selectedTopic.title) {
+      onRenameTopic?.(selectedTopic.id, trimmed);
+    } else if (selectedTopic) {
+      setTitleValue(selectedTopic.title);
+    }
+    setIsEditingTitle(false);
+  };
 
+  // Immediate save helper for comments & AI
   const handleAutoSave = (
     updatedContent: string,
     updatedSubComments: NoteComment[],
   ) => {
+    if (!selectedTopic) return;
     const updatedNote: TopicNote = {
       id: selectedTopic.note?.id || `note-${selectedTopic.id}`,
       title: selectedTopic.title,
@@ -114,6 +368,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
 
   // Generate complete notes using configured AI
   const handleAiGenerateNotes = async () => {
+    if (!selectedTopic) return;
     const key = getApiKey();
     if (!key) {
       setIsApiKeyModalOpen(true);
@@ -133,6 +388,9 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       );
 
       setContent(generated);
+      if (editor) {
+        editor.commands.setContent(generated);
+      }
       handleAutoSave(generated, subComments);
     } catch (err: any) {
       setAiError(err.message || "Failed to generate notes with AI.");
@@ -141,8 +399,9 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
     }
   };
 
-  // Generate a sub-section explanation with AI
+  // Generate sub-section explanation with AI
   const handleAiGenerateSubComment = async () => {
+    if (!selectedTopic) return;
     const key = getApiKey();
     if (!key) {
       setIsApiKeyModalOpen(true);
@@ -184,13 +443,75 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       setReplyInput("");
       setReplyTitle("");
       setIsAddingReply(false);
-      handleAutoSave(content, nextComments);
+      const currentMd = getEditorMarkdown(editor) || content;
+      handleAutoSave(currentMd, nextComments);
     } catch (err: any) {
       setAiError(err.message || "Failed to generate sub-section explanation.");
     } finally {
       setIsAiSubCommentGenerating(false);
     }
   };
+
+  const handleAddSubComment = () => {
+    if (!replyInput.trim() || !selectedTopic) return;
+
+    const newComment: NoteComment = {
+      id: `comment-${Date.now()}`,
+      author: replyTitle.trim() || "Sub-section",
+      timestamp:
+        new Date().toLocaleDateString("en-US", {
+          month: "short",
+          day: "2-digit",
+          year: "numeric",
+        }) +
+        " at " +
+        new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      content: replyInput.trim(),
+    };
+
+    const nextComments = [...subComments, newComment];
+    setSubComments(nextComments);
+    setReplyInput("");
+    setReplyTitle("");
+    setIsAddingReply(false);
+    const currentMd = getEditorMarkdown(editor) || content;
+    handleAutoSave(currentMd, nextComments);
+  };
+
+  const handleDeleteSubComment = (commentId: string) => {
+    if (!selectedTopic) return;
+    const nextComments = subComments.filter((c) => c.id !== commentId);
+    setSubComments(nextComments);
+    const currentMd = getEditorMarkdown(editor) || content;
+    handleAutoSave(currentMd, nextComments);
+  };
+
+  // Convert detected image URL to embedded image block
+  const handleEmbedPendingUrl = () => {
+    if (!editor || !pendingEmbedUrl) return;
+    editor.chain().focus().setImage({ src: pendingEmbedUrl }).run();
+    setPendingEmbedUrl(null);
+  };
+
+  if (!selectedTopic) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center p-8 text-neutral-400 dark:text-neutral-500 select-none font-manrope">
+        <div className="w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-4 text-neutral-300 dark:text-neutral-600">
+          <MessageSquare className="w-8 h-8" />
+        </div>
+        <h3 className="text-xl font-light text-neutral-600 dark:text-neutral-300 mb-1">
+          Select a topic
+        </h3>
+        <p className="text-xs text-neutral-400 dark:text-neutral-500 text-center max-w-xs">
+          Click on any topic in the syllabus tree to view or start taking
+          structured notes.
+        </p>
+      </div>
+    );
+  }
 
   // Handle "no notes yet" state
   if (!selectedTopic.hasNote && !content.trim()) {
@@ -202,17 +523,49 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           </span>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-neutral-100 rounded-full text-neutral-400 hover:text-neutral-700 cursor-pointer"
+            className="p-1 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Centered Topic Title strictly following the draft visual */}
-        <div className="text-center my-auto space-y-5 max-w-md">
-          <h2 className="text-2xl md:text-3xl font-light text-neutral-900 dark:text-neutral-100 tracking-tight">
-            {selectedTopic.title}
-          </h2>
+        {/* Centered Topic Title: Click to rename inline */}
+        <div className="text-center my-auto space-y-5 max-w-md w-full">
+          {isEditingTitle ? (
+            <div className="w-full">
+              <input
+                ref={titleInputRef}
+                type="text"
+                value={titleValue}
+                onChange={(e) => setTitleValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSaveTitle();
+                  else if (e.key === "Escape") {
+                    setTitleValue(selectedTopic.title);
+                    setIsEditingTitle(false);
+                  }
+                }}
+                onBlur={handleSaveTitle}
+                autoFocus
+                className="text-2xl md:text-3xl font-light text-neutral-900 dark:text-neutral-100 tracking-tight text-center bg-transparent border-b-2 border-blue-500 focus:outline-none px-2 py-0.5 w-full font-manrope"
+              />
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setTitleValue(selectedTopic.title);
+                setIsEditingTitle(true);
+              }}
+              className="group inline-flex items-center justify-center gap-2 px-3 py-1 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer text-center max-w-full"
+              title="Click to rename topic"
+            >
+              <h2 className="text-2xl md:text-3xl font-light text-neutral-900 dark:text-neutral-100 tracking-tight truncate">
+                {selectedTopic.title}
+              </h2>
+              <Edit3 className="w-4 h-4 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+            </button>
+          )}
 
           <div className="space-y-4">
             <p className="text-sm font-light text-neutral-500 dark:text-neutral-400 italic">
@@ -242,7 +595,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
               <button
                 onClick={handleAiGenerateNotes}
                 disabled={isAiGenerating}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-300 hover:to-green-700 text-white rounded-full text-xs font-medium shadow-sm transition-all cursor-pointer disabled:opacity-60"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-full text-xs font-medium shadow-sm transition-all cursor-pointer disabled:opacity-60"
                 title="Generate study notes with AI"
               >
                 {isAiGenerating ? (
@@ -259,14 +612,14 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             </div>
 
             {aiError && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2 text-left">
+              <div className="p-3 bg-red-50 dark:bg-rose-950/40 border border-red-200 dark:border-rose-900 rounded-xl text-xs text-red-700 dark:text-rose-300 flex items-start gap-2 text-left">
                 <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
                 <div className="space-y-1">
                   <span>{aiError}</span>
                   <div>
                     <button
                       onClick={() => setIsApiKeyModalOpen(true)}
-                      className="text-xs font-medium text-red-800 underline"
+                      className="text-xs font-medium text-red-800 dark:text-rose-200 underline"
                     >
                       Configure API Key
                     </button>
@@ -287,82 +640,19 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
     );
   }
 
-  // Formatting toolbar helper
-  const insertFormatting = (prefix: string, suffix: string = "") => {
-    const textarea = document.getElementById(
-      "note-textarea",
-    ) as HTMLTextAreaElement;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const previousText = textarea.value;
-    const selectedText = previousText.substring(start, end);
-
-    const newText =
-      previousText.substring(0, start) +
-      prefix +
-      (selectedText || "text") +
-      suffix +
-      previousText.substring(end);
-
-    setContent(newText);
-    handleAutoSave(newText, subComments);
-
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(
-        start + prefix.length,
-        start + prefix.length + (selectedText ? selectedText.length : 4),
-      );
-    }, 0);
-  };
-
-  const handleAddSubComment = () => {
-    if (!replyInput.trim()) return;
-
-    const newComment: NoteComment = {
-      id: `comment-${Date.now()}`,
-      author: replyTitle.trim() || "Sub-section",
-      timestamp:
-        new Date().toLocaleDateString("en-US", {
-          month: "short",
-          day: "2-digit",
-          year: "numeric",
-        }) +
-        " at " +
-        new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      content: replyInput.trim(),
-    };
-
-    const nextComments = [...subComments, newComment];
-    setSubComments(nextComments);
-    setReplyInput("");
-    setReplyTitle("");
-    setIsAddingReply(false);
-    handleAutoSave(content, nextComments);
-  };
-
-  const handleDeleteSubComment = (commentId: string) => {
-    const nextComments = subComments.filter((c) => c.id !== commentId);
-    setSubComments(nextComments);
-    handleAutoSave(content, nextComments);
-  };
-
-  const handleInsertImage = () => {
-    if (!imageUrl.trim()) return;
-    insertFormatting(`\n![image](${imageUrl.trim()})\n`, "");
-    setImageUrl("");
-    setShowImagePrompt(false);
-  };
+  const getBtnClass = (isActive: boolean, isDisabled: boolean = false) =>
+    `p-1.5 rounded transition-colors cursor-pointer ${
+      isDisabled
+        ? "text-neutral-300 dark:text-neutral-600 cursor-not-allowed"
+        : isActive
+          ? "bg-neutral-200 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 font-semibold"
+          : "text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
+    }`;
 
   return (
     <div className="h-full flex flex-col overflow-hidden font-manrope">
-      {/* Top Header inside main pane: Title Centered as in Draft */}
-      <div className="relative pt-6 pb-4 px-8 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
+      {/* Top Header: Centered Clickable / Inline Editable Topic Title */}
+      <div className="relative pt-5 pb-4 px-8 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
         {/* Left: Status Selector Pill */}
         <div className="flex items-center gap-1.5">
           <span className="text-[11px] text-neutral-400 dark:text-neutral-500 uppercase tracking-wider font-medium">
@@ -390,58 +680,47 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           </select>
         </div>
 
-        {/* Centered Topic Title: 1:1 match with draft visual */}
-        <div className="absolute left-1/2 -translate-x-1/2 text-center pointer-events-none max-w-[50%] truncate">
-          <h2 className="text-2xl font-light text-neutral-900 dark:text-neutral-100 tracking-tight truncate">
-            {selectedTopic.title}
-          </h2>
-        </div>
-
-        {/* Right Action Controls: Mode Switcher & Close */}
-        <div className="flex items-center gap-2">
-          {/* Segmented View Mode Controls */}
-          <div className="flex items-center p-0.5 bg-neutral-100 dark:bg-[#252528] rounded-full border border-neutral-200 dark:border-neutral-700 text-xs">
+        {/* Centered Topic Title: Click to Rename inline */}
+        {isEditingTitle ? (
+          <div className="absolute left-1/2 -translate-x-1/2 max-w-[55%] w-full flex items-center justify-center">
+            <input
+              ref={titleInputRef}
+              type="text"
+              value={titleValue}
+              onChange={(e) => setTitleValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSaveTitle();
+                else if (e.key === "Escape") {
+                  setTitleValue(selectedTopic.title);
+                  setIsEditingTitle(false);
+                }
+              }}
+              onBlur={handleSaveTitle}
+              autoFocus
+              className="text-2xl font-light text-neutral-900 dark:text-neutral-100 tracking-tight text-center bg-transparent border-b-2 border-blue-500 focus:outline-none px-2 py-0.5 w-full font-manrope"
+            />
+          </div>
+        ) : (
+          <div className="absolute left-1/2 -translate-x-1/2 max-w-[50%] flex items-center justify-center">
             <button
               type="button"
-              onClick={() => setViewMode("edit")}
-              className={`px-2.5 py-1 rounded-full font-medium transition-all cursor-pointer flex items-center gap-1 ${
-                viewMode === "edit"
-                  ? "bg-white dark:bg-[#1C1C1E] text-neutral-900 dark:text-neutral-100 shadow-2xs"
-                  : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200"
-              }`}
-              title="Edit markdown"
+              onClick={() => {
+                setTitleValue(selectedTopic.title);
+                setIsEditingTitle(true);
+              }}
+              className="group flex items-center gap-1.5 px-3 py-1 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer max-w-full"
+              title="Click to rename topic"
             >
-              <Edit3 className="w-3 h-3" />
-              <span>Edit</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("split")}
-              className={`px-2.5 py-1 rounded-full font-medium transition-all cursor-pointer hidden sm:flex items-center gap-1 ${
-                viewMode === "split"
-                  ? "bg-white dark:bg-[#1C1C1E] text-neutral-900 dark:text-neutral-100 shadow-2xs"
-                  : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200"
-              }`}
-              title="Side-by-side edit & live preview"
-            >
-              <Columns className="w-3 h-3" />
-              <span>Split</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("preview")}
-              className={`px-2.5 py-1 rounded-full font-medium transition-all cursor-pointer flex items-center gap-1 ${
-                viewMode === "preview"
-                  ? "bg-white dark:bg-[#1C1C1E] text-neutral-900 dark:text-neutral-100 shadow-2xs"
-                  : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200"
-              }`}
-              title="Rendered preview"
-            >
-              <Eye className="w-3 h-3" />
-              <span>Preview</span>
+              <h2 className="text-2xl font-light text-neutral-900 dark:text-neutral-100 tracking-tight truncate">
+                {selectedTopic.title}
+              </h2>
+              <Edit3 className="w-3.5 h-3.5 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
             </button>
           </div>
+        )}
 
+        {/* Right Action: Close */}
+        <div className="flex items-center gap-2">
           <button
             onClick={onClose}
             className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors cursor-pointer"
@@ -452,183 +731,301 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
         </div>
       </div>
 
-      {/* Formatting Toolbar (shown when editing or split) */}
-      {viewMode !== "preview" && (
-        <div className="px-8 py-2 border-b border-neutral-100 flex items-center gap-1 bg-neutral-50/70 text-neutral-600 text-xs flex-wrap">
+      {/* MS Word-level Rich Text Formatting Toolbar */}
+      {editor && (
+        <div className="px-8 py-2 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-1 bg-neutral-50/70 dark:bg-[#18181A] text-neutral-600 dark:text-neutral-400 text-xs flex-wrap">
+          {/* History: Undo / Redo */}
           <button
-            onClick={() => insertFormatting("**", "**")}
-            className="p-1.5 hover:bg-neutral-200/80 rounded transition-colors cursor-pointer"
-            title="Bold (**text**)"
+            type="button"
+            onClick={() => editor.chain().focus().undo().run()}
+            disabled={!editor.can().undo()}
+            className={getBtnClass(false, !editor.can().undo())}
+            title="Undo (Ctrl+Z)"
+          >
+            <Undo2 className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().redo().run()}
+            disabled={!editor.can().redo()}
+            className={getBtnClass(false, !editor.can().redo())}
+            title="Redo (Ctrl+Y)"
+          >
+            <Redo2 className="w-3.5 h-3.5" />
+          </button>
+
+          <div className="w-[1px] h-4 bg-neutral-200 dark:bg-neutral-700 mx-1" />
+
+          {/* Style Selector: Normal text, H1, H2, H3 */}
+          <select
+            value={
+              editor.isActive("heading", { level: 1 })
+                ? "1"
+                : editor.isActive("heading", { level: 2 })
+                  ? "2"
+                  : editor.isActive("heading", { level: 3 })
+                    ? "3"
+                    : "p"
+            }
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === "p") {
+                editor.chain().focus().setParagraph().run();
+              } else {
+                editor
+                  .chain()
+                  .focus()
+                  .toggleHeading({ level: parseInt(val) as 1 | 2 | 3 })
+                  .run();
+              }
+            }}
+            className="text-xs bg-white dark:bg-[#222225] border border-neutral-200 dark:border-neutral-700 rounded-md px-2 py-1 text-neutral-700 dark:text-neutral-300 outline-none cursor-pointer hover:border-neutral-400 dark:hover:border-neutral-500 font-medium"
+            title="Text style"
+          >
+            <option value="p">Normal text</option>
+            <option value="1">Heading 1 (Ctrl+Alt+1)</option>
+            <option value="2">Heading 2 (Ctrl+Alt+2)</option>
+            <option value="3">Heading 3 (Ctrl+Alt+3)</option>
+          </select>
+
+          <div className="w-[1px] h-4 bg-neutral-200 dark:bg-neutral-700 mx-1" />
+
+          {/* Inline Marks: Bold, Italic, Underline, Strike, Highlight, Code */}
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().toggleBold().run()}
+            className={getBtnClass(editor.isActive("bold"))}
+            title="Bold (Ctrl+B)"
           >
             <Bold className="w-3.5 h-3.5" />
           </button>
           <button
-            onClick={() => insertFormatting("*", "*")}
-            className="p-1.5 hover:bg-neutral-200/80 rounded transition-colors cursor-pointer"
-            title="Italic (*text*)"
+            type="button"
+            onClick={() => editor.chain().focus().toggleItalic().run()}
+            className={getBtnClass(editor.isActive("italic"))}
+            title="Italic (Ctrl+I)"
           >
             <Italic className="w-3.5 h-3.5" />
           </button>
           <button
-            onClick={() => insertFormatting("### ")}
-            className="p-1.5 hover:bg-neutral-200/80 rounded transition-colors cursor-pointer"
-            title="Heading 3"
+            type="button"
+            onClick={() => editor.chain().focus().toggleUnderline().run()}
+            className={getBtnClass(editor.isActive("underline"))}
+            title="Underline (Ctrl+U)"
           >
-            <Heading2 className="w-3.5 h-3.5" />
+            <UnderlineIcon className="w-3.5 h-3.5" />
           </button>
-          <div className="w-[1px] h-4 bg-neutral-300 mx-1" />
           <button
-            onClick={() => insertFormatting("- ")}
-            className="p-1.5 hover:bg-neutral-200/80 rounded transition-colors cursor-pointer"
-            title="Bullet list"
+            type="button"
+            onClick={() => editor.chain().focus().toggleStrike().run()}
+            className={getBtnClass(editor.isActive("strike"))}
+            title="Strikethrough (Ctrl+Shift+S)"
+          >
+            <Strikethrough className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().toggleHighlight().run()}
+            className={getBtnClass(editor.isActive("highlight"))}
+            title="Highlight marker"
+          >
+            <Highlighter className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().toggleCode().run()}
+            className={getBtnClass(editor.isActive("code"))}
+            title="Inline Code (Ctrl+E)"
+          >
+            <Code className="w-3.5 h-3.5" />
+          </button>
+
+          <div className="w-[1px] h-4 bg-neutral-200 dark:bg-neutral-700 mx-1" />
+
+          {/* Lists & Structural Elements */}
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().toggleBulletList().run()}
+            className={getBtnClass(editor.isActive("bulletList"))}
+            title="Bullet list (Ctrl+Shift+8)"
           >
             <List className="w-3.5 h-3.5" />
           </button>
           <button
-            onClick={() => insertFormatting("1. ")}
-            className="p-1.5 hover:bg-neutral-200/80 rounded transition-colors cursor-pointer"
-            title="Numbered list"
+            type="button"
+            onClick={() => editor.chain().focus().toggleOrderedList().run()}
+            className={getBtnClass(editor.isActive("orderedList"))}
+            title="Numbered list (Ctrl+Shift+7)"
           >
             <ListOrdered className="w-3.5 h-3.5" />
           </button>
           <button
-            onClick={() => insertFormatting("```\n", "\n```")}
-            className="p-1.5 hover:bg-neutral-200/80 rounded transition-colors cursor-pointer"
-            title="Code block"
+            type="button"
+            onClick={() => editor.chain().focus().toggleTaskList().run()}
+            className={getBtnClass(editor.isActive("taskList"))}
+            title="Checklist / Todo (Ctrl+Shift+9)"
           >
-            <Code className="w-3.5 h-3.5" />
+            <CheckSquare className="w-3.5 h-3.5" />
           </button>
           <button
-            onClick={() => insertFormatting("> ")}
-            className="p-1.5 hover:bg-neutral-200/80 rounded transition-colors cursor-pointer"
-            title="Quote"
+            type="button"
+            onClick={() => editor.chain().focus().toggleBlockquote().run()}
+            className={getBtnClass(editor.isActive("blockquote"))}
+            title="Quote block"
           >
             <Quote className="w-3.5 h-3.5" />
           </button>
           <button
-            onClick={() => setShowImagePrompt(true)}
-            className="p-1.5 hover:bg-neutral-200/80 rounded transition-colors cursor-pointer"
-            title="Insert Image"
+            type="button"
+            onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+            className={getBtnClass(editor.isActive("codeBlock"))}
+            title="Code block (Ctrl+Alt+C)"
           >
-            <ImageIcon className="w-3.5 h-3.5" />
+            <FileCode className="w-3.5 h-3.5" />
           </button>
 
-          {/* AI Generate Notes Button */}
-          <div className="w-[1px] h-4 bg-neutral-300 mx-1" />
+          <div className="w-[1px] h-4 bg-neutral-200 dark:bg-neutral-700 mx-1" />
+
+          {/* Alignment */}
           <button
-            onClick={handleAiGenerateNotes}
-            disabled={isAiGenerating}
-            className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-400 hover:to-green-700 text-white rounded-full text-[11px] font-medium shadow-xs transition-all cursor-pointer disabled:opacity-50"
-            title="Generate comprehensive study notes with AI"
+            type="button"
+            onClick={() => editor.chain().focus().setTextAlign("left").run()}
+            className={getBtnClass(editor.isActive({ textAlign: "left" }))}
+            title="Align Left (Ctrl+Shift+L)"
           >
-            {isAiGenerating ? (
-              <>
-                <Loader2 className="w-3 h-3 animate-spin text-white" />
-                <span>Generating...</span>
-              </>
-            ) : (
-              <>
-                <span>AI Notes</span>
-              </>
-            )}
+            <AlignLeft className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().setTextAlign("center").run()}
+            className={getBtnClass(editor.isActive({ textAlign: "center" }))}
+            title="Align Center (Ctrl+Shift+E)"
+          >
+            <AlignCenter className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().setTextAlign("right").run()}
+            className={getBtnClass(editor.isActive({ textAlign: "right" }))}
+            title="Align Right (Ctrl+Shift+R)"
+          >
+            <AlignRight className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().setTextAlign("justify").run()}
+            className={getBtnClass(editor.isActive({ textAlign: "justify" }))}
+            title="Align Justify (Ctrl+Shift+J)"
+          >
+            <AlignJustify className="w-3.5 h-3.5" />
           </button>
 
-          <span className="ml-auto text-[11px] text-neutral-400">
-            Auto-saved
-          </span>
+          <div className="w-[1px] h-4 bg-neutral-200 dark:bg-neutral-700 mx-1" />
+
+          {/* Horizontal Line & Clear Formatting */}
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().setHorizontalRule().run()}
+            className={getBtnClass(false)}
+            title="Horizontal Divider"
+          >
+            <Minus className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              editor.chain().focus().unsetAllMarks().clearNodes().run()
+            }
+            className={getBtnClass(false)}
+            title="Clear formatting"
+          >
+            <RemoveFormatting className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Right: AI Notes Button & Auto-saved Indicator */}
+          <div className="ml-auto flex items-center gap-3">
+            <button
+              onClick={handleAiGenerateNotes}
+              disabled={isAiGenerating}
+              className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-full text-[11px] font-medium shadow-xs transition-all cursor-pointer disabled:opacity-50"
+              title="Generate comprehensive study notes with AI"
+            >
+              {isAiGenerating ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin text-white" />
+                  <span>Generating...</span>
+                </>
+              ) : (
+                <>
+                  <span>AI Notes</span>
+                </>
+              )}
+            </button>
+
+            <span className="text-[11px] text-neutral-400 dark:text-neutral-500 select-none">
+              Auto-saved
+            </span>
+          </div>
         </div>
       )}
 
-      {/* Image Insertion Popover Modal */}
-      {showImagePrompt && (
-        <div className="px-8 py-2.5 bg-blue-50/80 border-b border-blue-100 flex items-center gap-3">
-          <ImageIcon className="w-4 h-4 text-blue-600 flex-shrink-0" />
-          <input
-            type="text"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="Paste image URL (e.g. https://... or data:image/...)"
-            className="flex-1 px-3 py-1 bg-white border border-blue-200 rounded text-xs outline-none focus:border-blue-500 font-manrope"
-            onKeyDown={(e) => e.key === "Enter" && handleInsertImage()}
-          />
-          <button
-            onClick={handleInsertImage}
-            className="px-3 py-1 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700 cursor-pointer"
-          >
-            Insert
-          </button>
-          <button
-            onClick={() => setShowImagePrompt(false)}
-            className="p-1 text-neutral-400 hover:text-neutral-700 cursor-pointer"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
+      {/* Notion-style Floating Contextual Action for Pasted Image URLs */}
+      {pendingEmbedUrl && (
+        <div className="mx-8 my-2 p-2.5 rounded-xl bg-blue-50/90 dark:bg-blue-950/70 border border-blue-200 dark:border-blue-800 flex items-center justify-between text-xs animate-in fade-in slide-in-from-top-1">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-base select-none">🖼️</span>
+            <span className="text-neutral-600 dark:text-neutral-400 truncate max-w-[280px]">
+              Image URL:{" "}
+              <span className="font-mono text-neutral-900 dark:text-neutral-200">
+                {pendingEmbedUrl}
+              </span>
+            </span>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              type="button"
+              onClick={handleEmbedPendingUrl}
+              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-2xs cursor-pointer"
+            >
+              Embed Image
+            </button>
+            <button
+              type="button"
+              onClick={() => setPendingEmbedUrl(null)}
+              className="px-2.5 py-1 text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-300 rounded-lg transition-colors cursor-pointer"
+            >
+              Keep as link
+            </button>
+          </div>
         </div>
       )}
 
       {/* AI Error Notification Banner */}
       {aiError && (
-        <div className="px-8 py-2 bg-red-50 border-b border-red-200 flex items-center justify-between text-xs text-red-700">
+        <div className="px-8 py-2 bg-red-50 dark:bg-rose-950/50 border-b border-red-200 dark:border-rose-900 flex items-center justify-between text-xs text-red-700 dark:text-rose-300">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
             <span>{aiError}</span>
           </div>
           <button
             onClick={() => setAiError(null)}
-            className="p-1 text-red-400 hover:text-red-700 cursor-pointer"
+            className="p-1 text-red-400 hover:text-red-700 dark:hover:text-rose-200 cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
 
-      {/* Main Content Area: Editor, Preview, or Split */}
-      <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6 min-h-0">
-        {viewMode === "preview" && (
-          <MarkdownRenderer
-            content={content}
-            emptyPlaceholder="*No notes content yet. Switch to Edit to write notes.*"
-          />
-        )}
-
-        {viewMode === "edit" && (
-          <textarea
-            id="note-textarea"
-            value={content}
-            onChange={(e) => {
-              setContent(e.target.value);
-              handleAutoSave(e.target.value, subComments);
-            }}
-            placeholder="Write notes for this syllabus topic here (supports full markdown: # Heading, - list, **bold**, `code`, tables)..."
-            className="w-full h-full min-h-[300px] resize-none bg-transparent outline-none font-mono text-xs leading-relaxed text-neutral-800 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500"
-          />
-        )}
-
-        {viewMode === "split" && (
-          <div className="grid grid-cols-2 gap-6 min-h-[300px] h-full">
-            {/* Left: Raw Markdown Editor */}
-            <div className="border-r border-neutral-200 dark:border-neutral-800 pr-4">
-              <textarea
-                id="note-textarea"
-                value={content}
-                onChange={(e) => {
-                  setContent(e.target.value);
-                  handleAutoSave(e.target.value, subComments);
-                }}
-                placeholder="Write markdown notes..."
-                className="w-full h-full min-h-[280px] resize-none bg-transparent outline-none font-mono text-xs leading-relaxed text-neutral-800 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500"
-              />
-            </div>
-
-            {/* Right: Live Rendered Preview */}
-            <div className="overflow-y-auto pl-2">
-              <MarkdownRenderer
-                content={content}
-                emptyPlaceholder="*Live preview will appear here as you type...*"
-              />
-            </div>
-          </div>
-        )}
+      {/* Main Notion-Style Live Markdown Editing Canvas */}
+      <div
+        className="flex-1 overflow-y-auto px-8 py-6 min-h-0 cursor-text"
+        onClick={() => {
+          if (editor && !editor.isFocused) {
+            editor.commands.focus();
+          }
+        }}
+      >
+        <EditorContent editor={editor} />
       </div>
 
       {/* Sub-sections Bottom Dock Panel with Eye Toggle */}
@@ -636,9 +1033,6 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
         {/* Panel Header Bar */}
         <div className="flex items-center justify-between px-8 py-2.5">
           <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-              Sub-sections ({subComments.length})
-            </span>
             {!isAddingReply && (
               <button
                 type="button"
@@ -660,7 +1054,9 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             onClick={() => setShowSubSections(!showSubSections)}
             className="p-1.5 rounded-lg hover:bg-neutral-200/60 dark:hover:bg-neutral-800 text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200 transition-colors cursor-pointer"
             title={showSubSections ? "Hide sub-sections" : "Show sub-sections"}
-            aria-label={showSubSections ? "Hide sub-sections" : "Show sub-sections"}
+            aria-label={
+              showSubSections ? "Hide sub-sections" : "Show sub-sections"
+            }
           >
             {showSubSections ? (
               <Eye className="w-4 h-4" />

@@ -237,6 +237,7 @@ export default function EditPage() {
             onUpdateStatus={handleUpdateStatus}
             onClose={() => setSelectedTopicId("")}
             courseTitle={syllabus.fileName}
+            onRenameTopic={handleRenameTopic}
           />
         </div>
       </div>

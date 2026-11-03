@@ -30,13 +30,16 @@ export const StatusChip: React.FC<StatusChipProps> = ({ items }) => {
   }, []);
 
   return (
-    <div ref={containerRef} className="relative inline-block select-none font-manrope">
+    <div
+      ref={containerRef}
+      className="relative inline-block select-none font-manrope"
+    >
       {/* Dropdown Popover shown ABOVE the chip when clicked */}
       {isOpen && (
         <div className="absolute bottom-full left-0 mb-2 w-64 bg-white dark:bg-[#1C1C1E] rounded-2xl shadow-xl border border-neutral-200/90 dark:border-neutral-700 p-4 z-50 text-xs animate-in fade-in slide-in-from-bottom-2 duration-150">
           <div className="flex items-center justify-between pb-2 mb-3 border-b border-neutral-100 dark:border-neutral-800">
             <span className="font-semibold text-neutral-800 dark:text-neutral-200">
-              Syllabus Progress Breakdown
+              Progress Breakdown
             </span>
             <span className="text-[11px] font-mono text-neutral-400 dark:text-neutral-500">
               {stats.total} topics
@@ -67,7 +70,9 @@ export const StatusChip: React.FC<StatusChipProps> = ({ items }) => {
             <div className="flex items-center justify-between text-neutral-700 dark:text-neutral-300">
               <span className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#0066FF]" />
-                <span className="text-neutral-900 dark:text-neutral-100 font-medium">Done:</span>
+                <span className="text-neutral-900 dark:text-neutral-100 font-medium">
+                  Done:
+                </span>
               </span>
               <span className="font-mono text-[11px]">
                 {stats.done.count} ({stats.done.pct}%)
@@ -77,7 +82,9 @@ export const StatusChip: React.FC<StatusChipProps> = ({ items }) => {
             <div className="flex items-center justify-between text-neutral-700 dark:text-neutral-300">
               <span className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#28A745]" />
-                <span className="text-neutral-900 dark:text-neutral-100 font-medium">Partially:</span>
+                <span className="text-neutral-900 dark:text-neutral-100 font-medium">
+                  Partially:
+                </span>
               </span>
               <span className="font-mono text-[11px]">
                 {stats.partial.count} ({stats.partial.pct}%)
@@ -87,7 +94,9 @@ export const StatusChip: React.FC<StatusChipProps> = ({ items }) => {
             <div className="flex items-center justify-between text-neutral-700 dark:text-neutral-300">
               <span className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#E53E3E]" />
-                <span className="text-neutral-900 dark:text-neutral-100 font-medium">Barely:</span>
+                <span className="text-neutral-900 dark:text-neutral-100 font-medium">
+                  Barely:
+                </span>
               </span>
               <span className="font-mono text-[11px]">
                 {stats.barely.count} ({stats.barely.pct}%)
