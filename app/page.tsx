@@ -84,9 +84,40 @@ export default function HomePage() {
     setSyllabi(updated);
   };
 
-  const handleSelectedFile = (file: File) => {
+  const handleSelectedFile = async (file: File) => {
     setUploadedFile(file);
     setErrorMessage(null);
+
+    // If importing a .crystal file (or JSON with syllabus items), instantly open directly in editor
+    const lowerName = file.name.toLowerCase();
+    if (lowerName.endsWith(".crystal") || lowerName.endsWith(".json")) {
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        if (parsed.items && Array.isArray(parsed.items)) {
+          const cleanName =
+            parsed.fileName || file.name.replace(/\.[^/.]+$/, "");
+          const importedSyllabus: SyllabusData = {
+            id: parsed.id || `syllabus-${Date.now()}`,
+            fileName: cleanName,
+            lastModified: "Just now",
+            items: parsed.items,
+            isDraft: false,
+          };
+          saveSyllabus(importedSyllabus);
+          setActiveSyllabusId(importedSyllabus.id);
+          router.push("/edit");
+          return;
+        }
+      } catch (err: any) {
+        setErrorMessage(
+          "Invalid .crystal file: " +
+            (err.message || "Failed to parse file content."),
+        );
+        return;
+      }
+    }
+
     if (!syllabusName) {
       const cleanName = file.name.replace(/\.[^/.]+$/, "");
       setSyllabusName(cleanName);
