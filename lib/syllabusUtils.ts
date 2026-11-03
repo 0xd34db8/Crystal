@@ -9,7 +9,9 @@ export interface SyllabusStats {
 }
 
 /**
- * Calculates completion stats across all leaf topics in a syllabus
+ * Calculates completion stats across all topics in a syllabus.
+ * Top-level modules and parent topics are counted, and their status
+ * cascades down to untouched child topics so marking a module has a major contribution.
  */
 export function calculateSyllabusStats(items: SyllabusItem[]): SyllabusStats {
   let done = 0;
@@ -18,21 +20,32 @@ export function calculateSyllabusStats(items: SyllabusItem[]): SyllabusStats {
   let untouched = 0;
   let total = 0;
 
-  const traverse = (nodeList: SyllabusItem[]) => {
-    for (const node of nodeList) {
-      if (!node.children || node.children.length === 0) {
-        total++;
-        if (node.status === "done") done++;
-        else if (node.status === "partial") partial++;
-        else if (node.status === "barely") barely++;
-        else untouched++;
-      } else {
-        traverse(node.children);
+  const countNode = (status: TopicStatus) => {
+    total++;
+    if (status === "done") done++;
+    else if (status === "partial") partial++;
+    else if (status === "barely") barely++;
+    else untouched++;
+  };
+
+  const traverse = (node: SyllabusItem, inheritedStatus?: TopicStatus) => {
+    const effectiveStatus =
+      node.status !== "untouched"
+        ? node.status
+        : inheritedStatus || "untouched";
+
+    countNode(effectiveStatus);
+
+    if (node.children && node.children.length > 0) {
+      for (const child of node.children) {
+        traverse(child, effectiveStatus);
       }
     }
   };
 
-  traverse(items);
+  for (const item of items) {
+    traverse(item, item.status);
+  }
 
   if (total === 0) {
     return {

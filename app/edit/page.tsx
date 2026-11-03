@@ -160,6 +160,23 @@ export default function EditPage() {
     });
   };
 
+  const handleRenameTopic = (itemId: string, newTitle: string) => {
+    const trimmed = newTitle.trim();
+    if (!trimmed) return;
+    setSyllabus((prev) => {
+      const updated = {
+        ...prev,
+        items: updateItemInTree(prev.items, itemId, (item) => ({
+          ...item,
+          title: trimmed,
+          note: item.note ? { ...item.note, title: trimmed } : undefined,
+        })),
+      };
+      saveSyllabus(updated);
+      return updated;
+    });
+  };
+
   const handleExport = () => {
     exportSyllabusAsFile(syllabus);
   };
@@ -189,6 +206,7 @@ export default function EditPage() {
             onUpdateStatus={handleUpdateStatus}
             onDeleteTopic={handleDeleteTopic}
             onAddTopic={handleAddTopic}
+            onRenameTopic={handleRenameTopic}
             onToggleNote={handleToggleNote}
             searchQuery={searchQuery}
           />

@@ -11,6 +11,7 @@ import {
   Trash2,
   X,
   CornerDownRight,
+  Pencil,
 } from "lucide-react";
 
 interface SyllabusTreeProps {
@@ -21,6 +22,7 @@ interface SyllabusTreeProps {
   onUpdateStatus: (itemId: string, status: TopicStatus) => void;
   onDeleteTopic?: (itemId: string) => void;
   onAddTopic?: (parentId: string | null, title: string) => void;
+  onRenameTopic?: (itemId: string, newTitle: string) => void;
   onToggleNote?: (itemId: string) => void;
   searchQuery?: string;
 }
@@ -33,6 +35,7 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
   onUpdateStatus,
   onDeleteTopic,
   onAddTopic,
+  onRenameTopic,
   onToggleNote,
   searchQuery = "",
 }) => {
@@ -41,6 +44,8 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
   const [subtopicInput, setSubtopicInput] = useState("");
   const [isAddingRoot, setIsAddingRoot] = useState(false);
   const [rootInput, setRootInput] = useState("");
+  const [editingTopicId, setEditingTopicId] = useState<string | null>(null);
+  const [editingTopicTitle, setEditingTopicTitle] = useState("");
 
   const handleCreateSubtopic = (parentId: string) => {
     if (subtopicInput.trim() && onAddTopic) {
@@ -58,18 +63,40 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
     setIsAddingRoot(false);
   };
 
-  // Status color resolver
-  const getStatusTextColor = (status: TopicStatus, isSelected: boolean) => {
+  const handleSaveRename = (itemId: string) => {
+    const trimmed = editingTopicTitle.trim();
+    if (trimmed && onRenameTopic) {
+      onRenameTopic(itemId, trimmed);
+    }
+    setEditingTopicId(null);
+  };
+
+  // Status pill styling resolver when selected vs unselected
+  const getTopicPillStyles = (status: TopicStatus, isSelected: boolean) => {
+    if (isSelected) {
+      switch (status) {
+        case "done":
+          return "bg-blue-100/90 text-[#0066FF] border border-blue-400/80 font-medium px-2.5 py-0.5 rounded-full shadow-xs";
+        case "partial":
+          return "bg-green-100/90 text-[#28A745] border border-green-500/80 font-medium px-2.5 py-0.5 rounded-full shadow-xs";
+        case "barely":
+          return "bg-red-100/90 text-[#E53E3E] border border-red-400/80 font-medium px-2.5 py-0.5 rounded-full shadow-xs";
+        case "untouched":
+        default:
+          return "bg-[#C7C7CC] text-neutral-950 border border-black/20 font-medium px-2.5 py-0.5 rounded-full shadow-xs";
+      }
+    }
+
     switch (status) {
       case "done":
-        return "text-[#0066FF]";
+        return "text-[#0066FF] hover:bg-blue-50/60 rounded px-1.5 py-0.5";
       case "partial":
-        return "text-[#28A745]";
+        return "text-[#28A745] hover:bg-green-50/60 rounded px-1.5 py-0.5";
       case "barely":
-        return "text-[#E53E3E]";
+        return "text-[#E53E3E] hover:bg-red-50/60 rounded px-1.5 py-0.5";
       case "untouched":
       default:
-        return isSelected ? "text-neutral-900 font-medium" : "text-neutral-800";
+        return "text-neutral-800 hover:bg-neutral-100 rounded px-1.5 py-0.5";
     }
   };
 
@@ -123,21 +150,44 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
           {/* Topic Title Badge / Label */}
           <div
             onClick={() => onSelectTopic(item)}
-            className={`cursor-pointer inline-flex items-center gap-1.5 px-1 py-0.5 transition-all ${
-              isSelected
-                ? "bg-[#C7C7CC] text-neutral-950 font-medium px-2 py-0.5 rounded-full shadow-xs border border-black/20"
-                : "hover:bg-neutral-100 rounded"
-            }`}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              if (onRenameTopic) {
+                setEditingTopicId(item.id);
+                setEditingTopicTitle(item.title);
+              }
+            }}
+            className={`cursor-pointer inline-flex items-center gap-1.5 transition-all ${getTopicPillStyles(
+              item.status,
+              isSelected,
+            )}`}
           >
-            <span
-              className={`leading-relaxed tracking-tight ${
-                isSelected
-                  ? "text-neutral-950"
-                  : getStatusTextColor(item.status, isSelected)
-              }`}
-            >
-              {item.title}
-            </span>
+            {editingTopicId === item.id ? (
+              <input
+                type="text"
+                autoFocus
+                value={editingTopicTitle}
+                onChange={(e) => setEditingTopicTitle(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                onDoubleClick={(e) => e.stopPropagation()}
+                onFocus={(e) => e.target.select()}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleSaveRename(item.id);
+                  } else if (e.key === "Escape") {
+                    e.preventDefault();
+                    setEditingTopicId(null);
+                  }
+                }}
+                onBlur={() => handleSaveRename(item.id)}
+                className="px-1.5 py-0.5 text-xs bg-white text-neutral-900 border border-neutral-400 rounded outline-none focus:ring-1 focus:ring-neutral-700 font-manrope min-w-[120px]"
+              />
+            ) : (
+              <span className="leading-relaxed tracking-tight">
+                {item.title}
+              </span>
+            )}
 
             {/* Note Icon strictly displayed beside topics with a note */}
             {item.hasNote && (
@@ -258,6 +308,21 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
                 </button>
               )}
 
+              {/* Rename Topic */}
+              {onRenameTopic && (
+                <button
+                  onClick={() => {
+                    setActiveMenuId(null);
+                    setEditingTopicId(item.id);
+                    setEditingTopicTitle(item.title);
+                  }}
+                  className="w-full px-3 py-1 text-left flex items-center gap-2 hover:bg-neutral-100 text-neutral-700 cursor-pointer"
+                >
+                  <Pencil className="w-3 h-3 text-neutral-500" />
+                  <span>Rename Topic</span>
+                </button>
+              )}
+
               {/* Delete Topic */}
               {onDeleteTopic && (
                 <>
@@ -342,14 +407,14 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
       className="h-full flex flex-col p-4 overflow-y-auto select-none font-manrope"
       onClick={() => setActiveMenuId(null)}
     >
-      <div className="flex-1 space-y-1">
+      <div className="flex-1 space-y-1 pb-10">
         {items.map((item, idx) =>
           renderTreeItem(item, 0, idx === items.length - 1),
         )}
 
         {/* Inline Add Root Topic */}
         {isAddingRoot && (
-          <div className="flex items-center gap-1.5 py-1.5 px-1 mt-2">
+          <div className="flex items-center gap-1.5 py-1.5 px-1 mt-3">
             <input
               type="text"
               autoFocus
@@ -382,13 +447,13 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
 
       {/* Add Topic Root Button */}
       {onAddTopic && !isAddingRoot && (
-        <div className="pt-3 mt-2 border-t border-neutral-100">
+        <div className="pt-4 mt-6 border-t border-neutral-100">
           <button
             onClick={() => {
               setIsAddingRoot(true);
               setRootInput("");
             }}
-            className="w-full py-1.5 px-3 border border-dashed border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50 text-neutral-600 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            className="w-full py-2 px-3 border border-dashed border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50 text-neutral-600 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5 text-neutral-500" />
             <span>Add Topic</span>
