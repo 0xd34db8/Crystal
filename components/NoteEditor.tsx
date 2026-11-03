@@ -10,7 +10,8 @@ import {
 import { ApiKeyModal } from "./ApiKeyModal";
 import { getApiKey } from "@/lib/storage";
 import { generateNotesWithAI, generateSubCommentWithAI } from "@/lib/ai";
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useEditor, EditorContent, ReactNodeViewRenderer } from "@tiptap/react";
+import { ResizableImage } from "./ResizableImage";
 import { Extension } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -56,15 +57,75 @@ import {
 
 // Markdown serialization extensions to cleanly bridge TipTap nodes to standard markdown strings
 const CustomImage = Image.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      width: {
+        default: null,
+        parseHTML: (element) => {
+          const width = element.getAttribute("width") || element.style.width;
+          if (!width) return null;
+          const parsed = parseInt(width, 10);
+          return isNaN(parsed) ? width : parsed;
+        },
+        renderHTML: (attributes) => {
+          if (!attributes.width) return {};
+          return { width: attributes.width };
+        },
+      },
+      textAlign: {
+        default: "left",
+        parseHTML: (element) => {
+          return (
+            element.getAttribute("data-align") ||
+            element.style.textAlign ||
+            "left"
+          );
+        },
+        renderHTML: (attributes) => {
+          if (!attributes.textAlign || attributes.textAlign === "left")
+            return {};
+          return {
+            "data-align": attributes.textAlign,
+            style: `text-align: ${attributes.textAlign}`,
+          };
+        },
+      },
+    };
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(ResizableImage);
+  },
   addStorage() {
     return {
       markdown: {
         serialize(state: any, node: any) {
-          state.write(
-            `![${state.esc(node.attrs.alt || "")}](${node.attrs.src}${
-              node.attrs.title ? ` "${state.esc(node.attrs.title)}"` : ""
-            })`,
-          );
+          const hasCustomAttrs =
+            node.attrs.width ||
+            (node.attrs.textAlign && node.attrs.textAlign !== "left");
+          if (hasCustomAttrs) {
+            const widthAttr = node.attrs.width
+              ? ` width="${node.attrs.width}"`
+              : "";
+            const alignAttr =
+              node.attrs.textAlign && node.attrs.textAlign !== "left"
+                ? ` data-align="${node.attrs.textAlign}"`
+                : "";
+            const titleAttr = node.attrs.title
+              ? ` title="${state.esc(node.attrs.title)}"`
+              : "";
+            state.write(
+              `<img src="${node.attrs.src}" alt="${state.esc(
+                node.attrs.alt || "",
+              )}"${widthAttr}${alignAttr}${titleAttr} />`,
+            );
+          } else {
+            state.write(
+              `![${state.esc(node.attrs.alt || "")}](${node.attrs.src}${
+                node.attrs.title ? ` "${state.esc(node.attrs.title)}"` : ""
+              })`,
+            );
+          }
         },
         parse: {},
       },
@@ -221,7 +282,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
         multicolor: false,
       }),
       TextAlign.configure({
-        types: ["heading", "paragraph"],
+        types: ["heading", "paragraph", "image"],
       }),
       CustomImage.configure({
         inline: false,
@@ -747,9 +808,29 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           </div>
         )}
 
-        {/* Right Action: Close */}
-        <div className="flex items-center gap-2 z-10">
+        {/* Right Actions: AI Notes Button & Close */}
+        <div className="flex items-center gap-4 sm:gap-5 z-10">
           <button
+            type="button"
+            onClick={handleAiGenerateNotes}
+            disabled={isAiGenerating}
+            className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-full text-xs font-medium shadow-2xs hover:shadow-xs transition-all cursor-pointer disabled:opacity-50"
+            title="Generate comprehensive study notes with AI"
+          >
+            {isAiGenerating ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                <span className="hidden xs:inline">Generating...</span>
+              </>
+            ) : (
+              <>
+                <span>AI Notes</span>
+              </>
+            )}
+          </button>
+
+          <button
+            type="button"
             onClick={onClose}
             className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors cursor-pointer"
             title="Close Note"
@@ -917,6 +998,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           {/* Alignment */}
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => editor.chain().focus().setTextAlign("left").run()}
             className={getBtnClass(editor.isActive({ textAlign: "left" }))}
             title="Align Left (Ctrl+Shift+L)"
@@ -925,6 +1007,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           </button>
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => editor.chain().focus().setTextAlign("center").run()}
             className={getBtnClass(editor.isActive({ textAlign: "center" }))}
             title="Align Center (Ctrl+Shift+E)"
@@ -933,6 +1016,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           </button>
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => editor.chain().focus().setTextAlign("right").run()}
             className={getBtnClass(editor.isActive({ textAlign: "right" }))}
             title="Align Right (Ctrl+Shift+R)"
@@ -941,6 +1025,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           </button>
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => editor.chain().focus().setTextAlign("justify").run()}
             className={getBtnClass(editor.isActive({ textAlign: "justify" }))}
             title="Align Justify (Ctrl+Shift+J)"
@@ -969,31 +1054,6 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           >
             <RemoveFormatting className="w-3.5 h-3.5" />
           </button>
-
-          {/* Right: AI Notes Button & Auto-saved Indicator */}
-          <div className="ml-auto flex items-center gap-3">
-            <button
-              onClick={handleAiGenerateNotes}
-              disabled={isAiGenerating}
-              className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-full text-[11px] font-medium shadow-xs transition-all cursor-pointer disabled:opacity-50"
-              title="Generate comprehensive study notes with AI"
-            >
-              {isAiGenerating ? (
-                <>
-                  <Loader2 className="w-3 h-3 animate-spin text-white" />
-                  <span>Generating...</span>
-                </>
-              ) : (
-                <>
-                  <span>AI Notes</span>
-                </>
-              )}
-            </button>
-
-            <span className="text-[11px] text-neutral-400 dark:text-neutral-500 select-none">
-              Auto-saved
-            </span>
-          </div>
         </div>
       )}
 

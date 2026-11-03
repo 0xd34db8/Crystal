@@ -114,12 +114,20 @@ ul[data-type="taskList"] li[data-checked="true"] > div {
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
 }
 
+.ProseMirror [data-node-view-wrapper] img {
+  margin: 0;
+}
+
 .dark .ProseMirror img {
   border-color: rgba(255, 255, 255, 0.1);
 }
 
 .ProseMirror img.ProseMirror-selectednode {
   outline: 2px solid #0066ff;
+}
+
+.ProseMirror [data-node-view-wrapper].ProseMirror-selectednode {
+  outline: none;
 }
 
 /* TipTap code block */

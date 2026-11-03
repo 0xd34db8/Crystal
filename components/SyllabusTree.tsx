@@ -12,6 +12,9 @@ import {
   X,
   CornerDownRight,
   Pencil,
+  Braces,
+  ListTree,
+  AlertCircle,
 } from "lucide-react";
 
 interface SyllabusTreeProps {
@@ -24,6 +27,7 @@ interface SyllabusTreeProps {
   onAddTopic?: (parentId: string | null, title: string) => void;
   onRenameTopic?: (itemId: string, newTitle: string) => void;
   onToggleNote?: (itemId: string) => void;
+  onUpdateItems?: (items: SyllabusItem[]) => void;
   searchQuery?: string;
 }
 
@@ -37,8 +41,12 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
   onAddTopic,
   onRenameTopic,
   onToggleNote,
+  onUpdateItems,
   searchQuery = "",
 }) => {
+  const [isJsonMode, setIsJsonMode] = useState(false);
+  const [jsonText, setJsonText] = useState("");
+  const [jsonError, setJsonError] = useState<string | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [addingSubtopicToId, setAddingSubtopicToId] = useState<string | null>(
     null,
@@ -404,62 +412,203 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
     );
   };
 
+  const handleOpenJsonMode = () => {
+    setJsonText(JSON.stringify(items, null, 2));
+    setJsonError(null);
+    setIsJsonMode(true);
+  };
+
+  const handleCloseJsonMode = () => {
+    try {
+      const parsed = JSON.parse(jsonText);
+      let nextItems: SyllabusItem[];
+      if (Array.isArray(parsed)) {
+        nextItems = parsed;
+      } else if (parsed && Array.isArray(parsed.items)) {
+        nextItems = parsed.items;
+      } else {
+        throw new Error(
+          "JSON must be an array of syllabus topics or { items: [...] }",
+        );
+      }
+
+      const sanitizeItems = (list: any[]): SyllabusItem[] => {
+        return list.map((item, i) => ({
+          id: item.id || `topic-${Date.now()}-${i}`,
+          title: item.title || "Untitled Topic",
+          status: item.status || "untouched",
+          isExpanded: item.isExpanded ?? true,
+          hasNote: Boolean(item.hasNote || item.note),
+          note: item.note,
+          children:
+            item.children && Array.isArray(item.children)
+              ? sanitizeItems(item.children)
+              : undefined,
+        }));
+      };
+
+      const sanitized = sanitizeItems(nextItems);
+      onUpdateItems?.(sanitized);
+      setIsJsonMode(false);
+      setJsonError(null);
+    } catch (err: any) {
+      setJsonError(err.message || "Invalid JSON syntax");
+    }
+  };
+
+  const handleJsonKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+      e.preventDefault();
+      handleCloseJsonMode();
+    } else if (e.key === "Tab") {
+      e.preventDefault();
+      const textarea = e.currentTarget;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const value = textarea.value;
+      const newValue = value.substring(0, start) + "  " + value.substring(end);
+      setJsonText(newValue);
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = start + 2;
+      }, 0);
+    }
+  };
+
   return (
     <div
-      className="h-full flex flex-col p-4 overflow-y-auto select-none font-manrope"
+      className="h-full flex flex-col select-none font-manrope overflow-hidden"
       onClick={() => setActiveMenuId(null)}
     >
-      <div className="flex-1 space-y-1 pb-10">
-        {items.map((item, idx) =>
-          renderTreeItem(item, 0, idx === items.length - 1),
-        )}
-
-        {/* Inline Add Root Topic */}
-        {isAddingRoot && (
-          <div className="flex items-center gap-1.5 py-1.5 px-1 mt-3">
-            <input
-              type="text"
-              autoFocus
-              value={rootInput}
-              onChange={(e) => setRootInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleCreateRootTopic();
-                if (e.key === "Escape") setIsAddingRoot(false);
-              }}
-              placeholder="New module or unit title..."
-              className="flex-1 px-2.5 py-1 text-xs bg-white dark:bg-[#252528] text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg outline-none focus:border-neutral-500 dark:focus:border-neutral-400 font-manrope"
-            />
-            <button
-              onClick={handleCreateRootTopic}
-              className="p-1 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded cursor-pointer"
-              title="Add"
-            >
-              <Check className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => setIsAddingRoot(false)}
-              className="p-1 text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded cursor-pointer"
-              title="Cancel"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
+      {isJsonMode ? (
+        <div className="flex-1 flex flex-col h-full overflow-hidden animate-in fade-in duration-100">
+          {/* Clean header bar */}
+          <div className="flex items-center justify-between px-3.5 py-2 border-b border-neutral-100 dark:border-neutral-800 text-xs select-none">
+            <span className="font-mono uppercase tracking-wider text-[10px] font-semibold text-neutral-500 dark:text-neutral-400">
+              JSON Mode
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    const parsed = JSON.parse(jsonText);
+                    setJsonText(JSON.stringify(parsed, null, 2));
+                    setJsonError(null);
+                  } catch (e: any) {
+                    setJsonError(e.message);
+                  }
+                }}
+                className="px-2 py-1 text-[11px] font-mono text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded transition-colors cursor-pointer"
+                title="Format JSON indentation"
+              >
+                Format
+              </button>
+              <button
+                type="button"
+                onClick={handleCloseJsonMode}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-200 text-white dark:text-neutral-950 font-medium text-[11px] transition-colors cursor-pointer shadow-2xs"
+                title="Apply changes & convert back to tree (Ctrl+Enter)"
+              >
+                <ListTree className="w-3.5 h-3.5" />
+                <span>Done</span>
+              </button>
+            </div>
           </div>
-        )}
-      </div>
 
-      {/* Add Topic Root Button */}
-      {onAddTopic && !isAddingRoot && (
-        <div className="pt-4 mt-6 border-t border-neutral-100 dark:border-neutral-800">
-          <button
-            onClick={() => {
-              setIsAddingRoot(true);
-              setRootInput("");
+          {jsonError && (
+            <div className="mx-3 mt-2 p-2 bg-red-50 dark:bg-rose-950/40 border border-red-200 dark:border-rose-900 rounded-lg text-[11px] text-red-600 dark:text-rose-300 flex items-start gap-1.5 animate-in fade-in">
+              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-red-500" />
+              <span className="flex-1 font-mono break-all">{jsonError}</span>
+              <button
+                type="button"
+                onClick={() => setJsonError(null)}
+                className="text-red-400 hover:text-red-600 dark:hover:text-rose-200 p-0.5 cursor-pointer"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+
+          <textarea
+            value={jsonText}
+            onChange={(e) => {
+              setJsonText(e.target.value);
+              if (jsonError) setJsonError(null);
             }}
-            className="w-full py-2 px-3 border border-dashed border-neutral-300 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
-            <span>Add Topic</span>
-          </button>
+            onKeyDown={handleJsonKeyDown}
+            placeholder="Edit syllabus tree JSON here..."
+            spellCheck={false}
+            className="flex-1 w-full p-3.5 font-mono text-xs leading-relaxed bg-transparent text-neutral-800 dark:text-neutral-200 outline-none resize-none selection:bg-blue-100 dark:selection:bg-blue-900 overflow-y-auto"
+          />
+        </div>
+      ) : (
+        <div className="h-full flex flex-col p-4 overflow-y-auto select-none font-manrope">
+          <div className="flex-1 space-y-1 pb-10">
+            {/* Top row with JSON toggle icon on the right (scrolls away with tree content) */}
+            <div className="flex justify-end items-center -mt-1 -mr-1 mb-1">
+              <button
+                type="button"
+                onClick={handleOpenJsonMode}
+                className="p-1 rounded-md text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+                title="Edit tree as JSON"
+                aria-label="Edit tree as JSON"
+              >
+                <Braces className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {items.map((item, idx) =>
+              renderTreeItem(item, 0, idx === items.length - 1),
+            )}
+
+            {/* Inline Add Root Topic */}
+            {isAddingRoot && (
+              <div className="flex items-center gap-1.5 py-1.5 px-1 mt-3">
+                <input
+                  type="text"
+                  autoFocus
+                  value={rootInput}
+                  onChange={(e) => setRootInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleCreateRootTopic();
+                    if (e.key === "Escape") setIsAddingRoot(false);
+                  }}
+                  placeholder="New module or unit title..."
+                  className="flex-1 px-2.5 py-1 text-xs bg-white dark:bg-[#252528] text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg outline-none focus:border-neutral-500 dark:focus:border-neutral-400 font-manrope"
+                />
+                <button
+                  onClick={handleCreateRootTopic}
+                  className="p-1 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded cursor-pointer"
+                  title="Add"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => setIsAddingRoot(false)}
+                  className="p-1 text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded cursor-pointer"
+                  title="Cancel"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Add Topic Root Button */}
+          {onAddTopic && !isAddingRoot && (
+            <div className="pt-4 mt-6 border-t border-neutral-100 dark:border-neutral-800">
+              <button
+                onClick={() => {
+                  setIsAddingRoot(true);
+                  setRootInput("");
+                }}
+                className="w-full py-2 px-3 border border-dashed border-neutral-300 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
+                <span>Add Topic</span>
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

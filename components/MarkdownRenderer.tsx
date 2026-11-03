@@ -120,13 +120,33 @@ const customComponents: Components = {
       {children}
     </a>
   ),
-  img: ({ src, alt }) => (
-    <img
-      src={src}
-      alt={alt || "Image"}
-      className="rounded-xl border border-neutral-200 dark:border-neutral-700 my-4 max-h-96 object-contain shadow-xs"
-    />
-  ),
+  img: ({ src, alt, ...props }: any) => {
+    const align = props["data-align"] || props.align;
+    const width = props.width;
+    const justifyClass =
+      align === "center"
+        ? "justify-center"
+        : align === "right"
+          ? "justify-end"
+          : "justify-start";
+    return (
+      <div className={`w-full flex my-4 ${justifyClass}`}>
+        <img
+          src={src}
+          alt={alt || "Image"}
+          style={
+            width
+              ? {
+                  width: typeof width === "number" ? `${width}px` : width,
+                  maxWidth: "100%",
+                }
+              : undefined
+          }
+          className="rounded-xl border border-neutral-200 dark:border-neutral-700 max-h-96 object-contain shadow-xs"
+        />
+      </div>
+    );
+  },
 };
 
 export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({

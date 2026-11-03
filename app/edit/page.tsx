@@ -211,6 +211,18 @@ export default function EditPage() {
     exportSyllabusAsFile(syllabus);
   };
 
+  const handleUpdateItems = (newItems: SyllabusItem[]) => {
+    setSyllabus((prev) => {
+      const updated = {
+        ...prev,
+        isDraft: false,
+        items: newItems,
+      };
+      saveSyllabus(updated);
+      return updated;
+    });
+  };
+
   return (
     <main className="h-screen w-full bg-[#F9F9F9] dark:bg-[#121212] flex flex-col overflow-hidden font-manrope">
       {/* Top Header Bar */}
@@ -245,6 +257,7 @@ export default function EditPage() {
             onAddTopic={handleAddTopic}
             onRenameTopic={handleRenameTopic}
             onToggleNote={handleToggleNote}
+            onUpdateItems={handleUpdateItems}
             searchQuery={searchQuery}
           />
         </div>
