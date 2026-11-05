@@ -11,7 +11,6 @@ import { ApiKeyModal } from "./ApiKeyModal";
 import { getApiKey } from "@/lib/storage";
 import {
   generateNotesWithAI,
-  generateSubCommentWithAI,
   getNoteGenerationPrompt,
 } from "@/lib/ai";
 import { useEditor, EditorContent, ReactNodeViewRenderer } from "@tiptap/react";
@@ -47,11 +46,8 @@ import {
   RemoveFormatting,
   Undo2,
   Redo2,
-  Eye,
-  EyeOff,
   Edit3,
   Plus,
-  Trash2,
   X,
   ArrowLeft,
   Loader2,
@@ -216,11 +212,6 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   isActive = false,
 }) => {
   const [content, setContent] = useState<string>("");
-  const [subComments, setSubComments] = useState<NoteComment[]>([]);
-  const [replyInput, setReplyInput] = useState<string>("");
-  const [replyTitle, setReplyTitle] = useState<string>("");
-  const [isAddingReply, setIsAddingReply] = useState<boolean>(false);
-  const [showSubSections, setShowSubSections] = useState<boolean>(true);
   const [hasCopiedNotePrompt, setHasCopiedNotePrompt] = useState<boolean>(false);
 
   // Topic Inline Renaming
@@ -256,8 +247,6 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
 
   // AI Generation State
   const [isAiGenerating, setIsAiGenerating] = useState<boolean>(false);
-  const [isAiSubCommentGenerating, setIsAiSubCommentGenerating] =
-    useState<boolean>(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState<boolean>(false);
 
@@ -267,9 +256,6 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
 
   const onSaveNoteRef = useRef(onSaveNote);
   onSaveNoteRef.current = onSaveNote;
-
-  const subCommentsRef = useRef(subComments);
-  subCommentsRef.current = subComments;
 
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -284,7 +270,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
         id: topic.note?.id || `note-${topic.id}`,
         title: topic.title,
         content: updatedMarkdown,
-        subComments: subCommentsRef.current,
+        subComments: topic.note?.subComments,
         updatedAt: new Date().toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
@@ -460,7 +446,6 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       setIsEditingTitle(false);
       const noteContent = selectedTopic.note?.content || "";
       setContent(noteContent);
-      setSubComments(selectedTopic.note?.subComments || []);
       if (editor) {
         const currentMd = getEditorMarkdown(editor);
         if (currentMd !== noteContent) {
@@ -469,7 +454,6 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       }
     } else {
       setContent("");
-      setSubComments([]);
       if (editor) {
         editor.commands.setContent("");
       }
@@ -496,17 +480,14 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
     setIsEditingTitle(false);
   };
 
-  // Immediate save helper for comments & AI
-  const handleAutoSave = (
-    updatedContent: string,
-    updatedSubComments: NoteComment[],
-  ) => {
+  // Immediate save helper for AI note generation
+  const handleAutoSave = (updatedContent: string) => {
     if (!selectedTopic) return;
     const updatedNote: TopicNote = {
       id: selectedTopic.note?.id || `note-${selectedTopic.id}`,
       title: selectedTopic.title,
       content: updatedContent,
-      subComments: updatedSubComments,
+      subComments: selectedTopic.note?.subComments,
       updatedAt: new Date().toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
@@ -558,102 +539,12 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       if (editor) {
         editor.commands.setContent(generated);
       }
-      handleAutoSave(generated, subComments);
+      handleAutoSave(generated);
     } catch (err: any) {
       setAiError(err.message || "Failed to generate notes with AI.");
     } finally {
       setIsAiGenerating(false);
     }
-  };
-
-  // Generate sub-section explanation with AI
-  const handleAiGenerateSubComment = async () => {
-    if (!selectedTopic) return;
-    const key = getApiKey();
-    if (!key) {
-      setIsApiKeyModalOpen(true);
-      return;
-    }
-
-    const query = replyInput.trim() || replyTitle.trim() || selectedTopic.title;
-    setIsAiSubCommentGenerating(true);
-    setAiError(null);
-
-    try {
-      const result = await generateSubCommentWithAI(
-        {
-          topicTitle: selectedTopic.title,
-          aspectOrQuestion: query,
-        },
-        key,
-      );
-
-      const newComment: NoteComment = {
-        id: `comment-${Date.now()}`,
-        author: result.title || replyTitle.trim() || "AI Concept Notes",
-        timestamp:
-          new Date().toLocaleDateString("en-US", {
-            month: "short",
-            day: "2-digit",
-            year: "numeric",
-          }) +
-          " at " +
-          new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-        content: result.content,
-      };
-
-      const nextComments = [...subComments, newComment];
-      setSubComments(nextComments);
-      setReplyInput("");
-      setReplyTitle("");
-      setIsAddingReply(false);
-      const currentMd = getEditorMarkdown(editor) || content;
-      handleAutoSave(currentMd, nextComments);
-    } catch (err: any) {
-      setAiError(err.message || "Failed to generate sub-section explanation.");
-    } finally {
-      setIsAiSubCommentGenerating(false);
-    }
-  };
-
-  const handleAddSubComment = () => {
-    if (!replyInput.trim() || !selectedTopic) return;
-
-    const newComment: NoteComment = {
-      id: `comment-${Date.now()}`,
-      author: replyTitle.trim() || "Sub-section",
-      timestamp:
-        new Date().toLocaleDateString("en-US", {
-          month: "short",
-          day: "2-digit",
-          year: "numeric",
-        }) +
-        " at " +
-        new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      content: replyInput.trim(),
-    };
-
-    const nextComments = [...subComments, newComment];
-    setSubComments(nextComments);
-    setReplyInput("");
-    setReplyTitle("");
-    setIsAddingReply(false);
-    const currentMd = getEditorMarkdown(editor) || content;
-    handleAutoSave(currentMd, nextComments);
-  };
-
-  const handleDeleteSubComment = (commentId: string) => {
-    if (!selectedTopic) return;
-    const nextComments = subComments.filter((c) => c.id !== commentId);
-    setSubComments(nextComments);
-    const currentMd = getEditorMarkdown(editor) || content;
-    handleAutoSave(currentMd, nextComments);
   };
 
   // Convert detected image URL to embedded image block
@@ -1269,142 +1160,6 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
         <div className={isFullscreen ? "max-w-4xl mx-auto w-full" : "w-full"}>
           <EditorContent editor={editor} />
         </div>
-      </div>
-
-      {/* Sub-sections Bottom Dock Panel with Eye Toggle */}
-      <div className="border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50/70 dark:bg-[#18181A] transition-all flex flex-col flex-shrink-0">
-        {/* Panel Header Bar */}
-        <div className="flex items-center justify-between px-4 sm:px-6 md:px-8 py-2 sm:py-2.5">
-          <div
-            className={`w-full flex items-center justify-between ${
-              isFullscreen ? "max-w-4xl mx-auto" : ""
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              {!isAddingReply && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsAddingReply(true);
-                    setShowSubSections(true);
-                  }}
-                  className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Sub-section</span>
-                </button>
-              )}
-            </div>
-
-            {/* Eye Icon to Hide / Show Sub-sections */}
-            <button
-              type="button"
-              onClick={() => setShowSubSections(!showSubSections)}
-              className="p-1.5 rounded-lg hover:bg-neutral-200/60 dark:hover:bg-neutral-800 text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200 transition-colors cursor-pointer"
-              title={showSubSections ? "Hide sub-sections" : "Show sub-sections"}
-              aria-label={
-                showSubSections ? "Hide sub-sections" : "Show sub-sections"
-              }
-            >
-              {showSubSections ? (
-                <Eye className="w-4 h-4" />
-              ) : (
-                <EyeOff className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Expandable sub-sections body */}
-        {showSubSections && (
-          <div className="px-4 sm:px-6 md:px-8 pb-3 sm:pb-4 pt-1 max-h-56 overflow-y-auto space-y-3">
-            <div className={isFullscreen ? "max-w-4xl mx-auto w-full space-y-3" : "space-y-3"}>
-              {/* Sub-comment Cards */}
-              <div className="space-y-2.5">
-              {subComments.map((comment) => (
-                <div
-                  key={comment.id}
-                  className="p-3 rounded-xl bg-white dark:bg-[#222225] border border-neutral-200 dark:border-neutral-700 space-y-1.5 text-xs shadow-2xs"
-                >
-                  <div className="flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400">
-                    <span className="font-semibold text-neutral-800 dark:text-neutral-200">
-                      {comment.author}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span>{comment.timestamp}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteSubComment(comment.id)}
-                        className="text-neutral-400 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer p-0.5"
-                        title="Delete sub-section"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap leading-relaxed">
-                    {comment.content}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Add Sub-section Form */}
-            {isAddingReply && (
-              <div className="p-3.5 rounded-xl bg-white dark:bg-[#222225] border border-neutral-300 dark:border-neutral-700 shadow-xs space-y-2 text-xs animate-in fade-in duration-150">
-                <input
-                  type="text"
-                  value={replyTitle}
-                  onChange={(e) => setReplyTitle(e.target.value)}
-                  placeholder="Sub-section title (e.g. Code Example, Summary)"
-                  className="w-full px-2.5 py-1.5 border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-[#1C1C1E] text-neutral-800 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 rounded text-xs outline-none focus:border-neutral-400 dark:focus:border-neutral-500 font-manrope"
-                />
-                <textarea
-                  value={replyInput}
-                  onChange={(e) => setReplyInput(e.target.value)}
-                  placeholder="Write detailed sub-notes, or leave blank and click 'Explain with AI'..."
-                  rows={3}
-                  className="w-full px-2.5 py-1.5 border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-[#1C1C1E] text-neutral-800 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 rounded text-xs outline-none focus:border-neutral-400 dark:focus:border-neutral-500 resize-none font-manrope"
-                />
-                <div className="flex items-center justify-between pt-1">
-                  <button
-                    type="button"
-                    onClick={handleAiGenerateSubComment}
-                    disabled={isAiSubCommentGenerating}
-                    className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 cursor-pointer disabled:opacity-50"
-                  >
-                    {isAiSubCommentGenerating ? (
-                      <>
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                        <span>Generating with AI...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>Explain with AI</span>
-                      </>
-                    )}
-                  </button>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setIsAddingReply(false)}
-                      className="px-3 py-1 rounded text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 text-xs cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleAddSubComment}
-                      className="px-3 py-1 bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 rounded text-xs font-medium hover:bg-neutral-800 dark:hover:bg-neutral-200 cursor-pointer"
-                    >
-                      Add Sub-section
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-            </div>
-          </div>
-        )}
       </div>
 
       <ApiKeyModal

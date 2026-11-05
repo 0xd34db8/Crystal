@@ -5,7 +5,9 @@ import { TopBar } from "@/components/TopBar";
 import { SyllabusTree } from "@/components/SyllabusTree";
 import { NoteEditor } from "@/components/NoteEditor";
 import { StatusChip } from "@/components/StatusChip";
+import { SubsectionsDrawer } from "@/components/SubsectionsDrawer";
 import { ApiKeyModal } from "@/components/ApiKeyModal";
+import { ListTree, ChevronUp } from "lucide-react";
 import { initialSyllabusData } from "@/lib/mockData";
 import {
   getSavedSyllabi,
@@ -37,6 +39,7 @@ export default function EditPage() {
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState<boolean>(false);
   const [mobileTab, setMobileTab] = useState<"tree" | "editor">("tree");
   const [activePanel, setActivePanel] = useState<"tree" | "editor">("tree");
+  const [isSubsectionsOpen, setIsSubsectionsOpen] = useState<boolean>(false);
 
   // Structural tree snapshot (preserves latest notes across tree undo/redo)
   interface TreeSnapshotNode {
@@ -466,46 +469,107 @@ export default function EditPage() {
         </div>
       </div>
 
-      {/* Bottom Bar: Status Chip (Percentage of blue/done topics with popup) */}
-      <div className="px-4 sm:px-6 md:px-8 py-2 sm:py-3 flex items-center justify-between border-t border-black/5 dark:border-neutral-800 bg-[#F9F9F9] dark:bg-[#121212] gap-2">
-        <StatusChip items={syllabus.items} />
+      {/* Website Footer: Status Chip, Subsections Interface, and Controls */}
+      <footer className="border-t border-black/5 dark:border-neutral-800 bg-[#F9F9F9] dark:bg-[#121212] flex flex-col flex-shrink-0 z-20 font-manrope">
+        {/* Expandable Sub-sections Drawer */}
+        {isSubsectionsOpen && selectedTopic && (
+          <SubsectionsDrawer
+            selectedTopic={selectedTopic}
+            onSaveNote={handleSaveNote}
+            apiKey={apiKey}
+            onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
+            onClose={() => setIsSubsectionsOpen(false)}
+          />
+        )}
 
-        {/* Mobile View Switcher between Syllabus Tree and Note Editor */}
-        <div className="flex md:hidden items-center p-0.5 bg-neutral-200/90 dark:bg-neutral-800 rounded-full text-xs font-medium shadow-xs">
-          <button
-            type="button"
-            onClick={() => {
-              setMobileTab("tree");
-              setActivePanel("tree");
-            }}
-            className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
-              mobileTab === "tree"
-                ? "bg-white dark:bg-[#1C1C1E] text-neutral-900 dark:text-neutral-100 shadow-2xs font-semibold"
-                : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200"
-            }`}
-          >
-            Tree
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setMobileTab("editor");
-              setActivePanel("editor");
-            }}
-            className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
-              mobileTab === "editor"
-                ? "bg-white dark:bg-[#1C1C1E] text-neutral-900 dark:text-neutral-100 shadow-2xs font-semibold"
-                : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200"
-            }`}
-          >
-            Note
-          </button>
-        </div>
+        {/* Bottom Bar: Status Chip (left), Mobile Tab Switcher (center), Sub-sections Trigger & Branding (right) */}
+        <div className="px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 flex items-center justify-between gap-2">
+          {/* Left Side: Status Chip */}
+          <div className="flex items-center gap-2">
+            <StatusChip items={syllabus.items} />
+          </div>
 
-        <div className="text-[11px] text-neutral-400 dark:text-neutral-600 font-light select-none hidden xs:block">
-          Crystal
+          {/* Middle: Mobile View Switcher between Syllabus Tree and Note Editor */}
+          <div className="flex md:hidden items-center p-0.5 bg-neutral-200/90 dark:bg-neutral-800 rounded-full text-xs font-medium shadow-xs">
+            <button
+              type="button"
+              onClick={() => {
+                setMobileTab("tree");
+                setActivePanel("tree");
+              }}
+              className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+                mobileTab === "tree"
+                  ? "bg-white dark:bg-[#1C1C1E] text-neutral-900 dark:text-neutral-100 shadow-2xs font-semibold"
+                  : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200"
+              }`}
+            >
+              Tree
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMobileTab("editor");
+                setActivePanel("editor");
+              }}
+              className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+                mobileTab === "editor"
+                  ? "bg-white dark:bg-[#1C1C1E] text-neutral-900 dark:text-neutral-100 shadow-2xs font-semibold"
+                  : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200"
+              }`}
+            >
+              Note
+            </button>
+          </div>
+
+          {/* Right Side: Sub-sections Trigger Pill + Crystal label */}
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              data-subsections-trigger="true"
+              onClick={() => {
+                if (!selectedTopic) return;
+                setIsSubsectionsOpen((prev) => !prev);
+              }}
+              disabled={!selectedTopic}
+              className={`group inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-normal tracking-tight shadow-2xs transition-all cursor-pointer ${
+                !selectedTopic
+                  ? "bg-neutral-200/50 dark:bg-neutral-800/50 text-neutral-400 dark:text-neutral-500 border border-neutral-300/40 dark:border-neutral-700/40 cursor-not-allowed"
+                  : isSubsectionsOpen
+                    ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 border border-transparent shadow-xs"
+                    : "bg-white dark:bg-[#1C1C1E] text-neutral-800 dark:text-neutral-200 border border-neutral-300/70 dark:border-neutral-700/70 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              }`}
+              title={
+                selectedTopic
+                  ? `Sub-sections for "${selectedTopic.title}" (${selectedTopic.note?.subComments?.length || 0})`
+                  : "Select a topic to view or add sub-sections"
+              }
+            >
+              <ListTree className="w-3.5 h-3.5" />
+              <span>Sub-sections</span>
+              {selectedTopic?.note?.subComments && selectedTopic.note.subComments.length > 0 && (
+                <span
+                  className={`px-1.5 py-0.2 text-[10px] font-mono rounded-full font-semibold ${
+                    isSubsectionsOpen
+                      ? "bg-white/20 text-white dark:bg-neutral-900/20 dark:text-neutral-950"
+                      : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300"
+                  }`}
+                >
+                  {selectedTopic.note.subComments.length}
+                </span>
+              )}
+              <ChevronUp
+                className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                  isSubsectionsOpen ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+
+            <div className="text-[11px] text-neutral-400 dark:text-neutral-600 font-light select-none hidden xs:block">
+              Crystal
+            </div>
+          </div>
         </div>
-      </div>
+      </footer>
 
       {/* API Key Modal */}
       <ApiKeyModal
