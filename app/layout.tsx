@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
 import "./globals.css";
+import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -27,26 +28,7 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `
-              try {
-                const stored = localStorage.getItem('crystal_theme') || 'system';
-                let isDark = false;
-                if (stored === 'system') {
-                  isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-                  document.documentElement.setAttribute('data-theme-setting', 'system');
-                } else {
-                  document.documentElement.setAttribute('data-theme', stored);
-                  document.documentElement.setAttribute('data-theme-setting', stored);
-                  isDark = stored === 'dark' || stored === 'nord' || stored === 'midnight' || stored === 'forest';
-                }
-                if (isDark) {
-                  document.documentElement.classList.add('dark');
-                } else {
-                  document.documentElement.classList.remove('dark');
-                }
-              } catch (_) {}
-            `,
+            __html: THEME_BOOTSTRAP_SCRIPT,
           }}
         />
       </head>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import { TopBar } from "@/components/TopBar";
@@ -388,7 +388,7 @@ export default function EditPage() {
   };
 
   return (
-    <main className="h-screen w-full bg-[#F9F9F9] dark:bg-[#121212] flex flex-col overflow-hidden font-manrope">
+    <main className="h-screen w-full bg-background flex flex-col overflow-hidden font-manrope">
       {/* Top Header Bar */}
       <TopBar
         fileName={syllabus.fileName}
@@ -407,10 +407,10 @@ export default function EditPage() {
           data-tree-pane="true"
           onClickCapture={() => setActivePanel("tree")}
           onFocusCapture={() => setActivePanel("tree")}
-          className={`w-full md:w-80 lg:w-96 xl:w-[380px] flex-shrink-0 bg-white dark:bg-[#1C1C1E] rounded-2xl md:rounded-[26px] border transition-all duration-200 shadow-xs flex flex-col overflow-hidden ${
+          className={`w-full md:w-80 lg:w-96 xl:w-[380px] flex-shrink-0 bg-card rounded-2xl md:rounded-[26px] border transition-all duration-200 shadow-xs flex flex-col overflow-hidden ${
             activePanel === "tree"
-              ? "border-black/30 dark:border-white/25 shadow-sm"
-              : "border-black/10 dark:border-white/10"
+              ? "border-foreground/30 shadow-sm"
+              : "border-border"
           } ${
             mobileTab === "tree" ? "flex" : "hidden md:flex"
           }`}
@@ -444,10 +444,10 @@ export default function EditPage() {
           data-editor-pane="true"
           onClickCapture={() => setActivePanel("editor")}
           onFocusCapture={() => setActivePanel("editor")}
-          className={`flex-1 bg-white dark:bg-[#1C1C1E] rounded-2xl md:rounded-[26px] border transition-all duration-200 shadow-xs flex flex-col overflow-hidden ${
+          className={`flex-1 bg-card rounded-2xl md:rounded-[26px] border transition-all duration-200 shadow-xs flex flex-col overflow-hidden ${
             activePanel === "editor"
-              ? "border-black/30 dark:border-white/25 shadow-sm"
-              : "border-black/10 dark:border-white/10"
+              ? "border-foreground/30 shadow-sm"
+              : "border-border"
           } ${
             mobileTab === "editor" ? "flex" : "hidden md:flex"
           }`}
@@ -470,7 +470,7 @@ export default function EditPage() {
       </div>
 
       {/* Website Footer: Status Chip, Subsections Interface, and Controls */}
-      <footer className="border-t border-black/5 dark:border-neutral-800 bg-[#F9F9F9] dark:bg-[#121212] flex flex-col flex-shrink-0 z-20 font-manrope">
+      <footer className="border-t border-border-subtle bg-background flex flex-col flex-shrink-0 z-20 font-manrope">
         {/* Expandable Sub-sections Drawer */}
         {isSubsectionsOpen && selectedTopic && (
           <SubsectionsDrawer
@@ -490,7 +490,7 @@ export default function EditPage() {
           </div>
 
           {/* Middle: Mobile View Switcher between Syllabus Tree and Note Editor */}
-          <div className="flex md:hidden items-center p-0.5 bg-neutral-200/90 dark:bg-neutral-800 rounded-full text-xs font-medium shadow-xs">
+          <div className="flex md:hidden items-center p-0.5 bg-subtle rounded-full text-xs font-medium shadow-xs">
             <button
               type="button"
               onClick={() => {
@@ -499,8 +499,8 @@ export default function EditPage() {
               }}
               className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
                 mobileTab === "tree"
-                  ? "bg-white dark:bg-[#1C1C1E] text-neutral-900 dark:text-neutral-100 shadow-2xs font-semibold"
-                  : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200"
+                  ? "bg-card text-foreground shadow-2xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               Tree
@@ -513,8 +513,8 @@ export default function EditPage() {
               }}
               className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
                 mobileTab === "editor"
-                  ? "bg-white dark:bg-[#1C1C1E] text-neutral-900 dark:text-neutral-100 shadow-2xs font-semibold"
-                  : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200"
+                  ? "bg-card text-foreground shadow-2xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               Note
@@ -533,10 +533,10 @@ export default function EditPage() {
               disabled={!selectedTopic}
               className={`group inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-normal tracking-tight shadow-2xs transition-all cursor-pointer ${
                 !selectedTopic
-                  ? "bg-neutral-200/50 dark:bg-neutral-800/50 text-neutral-400 dark:text-neutral-500 border border-neutral-300/40 dark:border-neutral-700/40 cursor-not-allowed"
+                  ? "bg-subtle text-muted-foreground border border-border/40 cursor-not-allowed"
                   : isSubsectionsOpen
-                    ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 border border-transparent shadow-xs"
-                    : "bg-white dark:bg-[#1C1C1E] text-neutral-800 dark:text-neutral-200 border border-neutral-300/70 dark:border-neutral-700/70 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                    ? "bg-primary text-primary-foreground border border-transparent shadow-xs"
+                    : "bg-card text-foreground border border-border hover:bg-subtle"
               }`}
               title={
                 selectedTopic
@@ -550,8 +550,8 @@ export default function EditPage() {
                 <span
                   className={`px-1.5 py-0.2 text-[10px] font-mono rounded-full font-semibold ${
                     isSubsectionsOpen
-                      ? "bg-white/20 text-white dark:bg-neutral-900/20 dark:text-neutral-950"
-                      : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300"
+                      ? "bg-primary-foreground/20 text-primary-foreground"
+                      : "bg-subtle text-foreground-subtle"
                   }`}
                 >
                   {selectedTopic.note.subComments.length}
@@ -564,7 +564,7 @@ export default function EditPage() {
               />
             </button>
 
-            <div className="text-[11px] text-neutral-400 dark:text-neutral-600 font-light select-none hidden xs:block">
+            <div className="text-[11px] text-muted-foreground font-light select-none hidden xs:block">
               Crystal
             </div>
           </div>

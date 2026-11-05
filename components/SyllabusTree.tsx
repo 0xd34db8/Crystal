@@ -106,27 +106,27 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
     if (isSelected) {
       switch (status) {
         case "done":
-          return "bg-blue-100/90 dark:bg-blue-950/80 text-[#0066FF] dark:text-blue-300 border border-blue-400/80 dark:border-blue-500/70 font-medium px-2.5 py-0.5 rounded-full shadow-xs";
+          return "bg-status-done-bg text-status-done-fg border border-status-done-border font-medium px-2.5 py-0.5 rounded-full shadow-xs";
         case "partial":
-          return "bg-green-100/90 dark:bg-emerald-950/80 text-[#28A745] dark:text-emerald-300 border border-green-500/80 dark:border-emerald-500/70 font-medium px-2.5 py-0.5 rounded-full shadow-xs";
+          return "bg-status-partial-bg text-status-partial-fg border border-status-partial-border font-medium px-2.5 py-0.5 rounded-full shadow-xs";
         case "barely":
-          return "bg-red-100/90 dark:bg-rose-950/80 text-[#E53E3E] dark:text-rose-300 border border-red-400/80 dark:border-rose-500/70 font-medium px-2.5 py-0.5 rounded-full shadow-xs";
+          return "bg-status-barely-bg text-status-barely-fg border border-status-barely-border font-medium px-2.5 py-0.5 rounded-full shadow-xs";
         case "untouched":
         default:
-          return "bg-[#C7C7CC] dark:bg-neutral-700 text-neutral-950 dark:text-neutral-100 border border-black/20 dark:border-white/20 font-medium px-2.5 py-0.5 rounded-full shadow-xs";
+          return "bg-status-untouched-bg text-status-untouched-fg border border-status-untouched-border font-medium px-2.5 py-0.5 rounded-full shadow-xs";
       }
     }
 
     switch (status) {
       case "done":
-        return "text-[#0066FF] dark:text-blue-400 hover:bg-blue-50/60 dark:hover:bg-blue-950/40 rounded px-1.5 py-0.5";
+        return "text-status-done-fg hover:bg-status-done-bg rounded px-1.5 py-0.5";
       case "partial":
-        return "text-[#28A745] dark:text-emerald-400 hover:bg-green-50/60 dark:hover:bg-emerald-950/40 rounded px-1.5 py-0.5";
+        return "text-status-partial-fg hover:bg-status-partial-bg rounded px-1.5 py-0.5";
       case "barely":
-        return "text-[#E53E3E] dark:text-rose-400 hover:bg-red-50/60 dark:hover:bg-rose-950/40 rounded px-1.5 py-0.5";
+        return "text-status-barely-fg hover:bg-status-barely-bg rounded px-1.5 py-0.5";
       case "untouched":
       default:
-        return "text-neutral-800 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded px-1.5 py-0.5";
+        return "text-foreground hover:bg-subtle rounded px-1.5 py-0.5";
     }
   };
 
@@ -165,7 +165,7 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
                 e.stopPropagation();
                 onToggleExpand(item.id);
               }}
-              className="mr-1.5 w-3.5 h-3.5 flex items-center justify-center text-neutral-800 dark:text-neutral-300 hover:text-black dark:hover:text-white transition-transform cursor-pointer"
+              className="mr-1.5 w-3.5 h-3.5 flex items-center justify-center text-foreground-subtle hover:text-foreground transition-transform cursor-pointer"
             >
               {isExpanded ? (
                 <span className="text-[9px] leading-none">▼</span>
@@ -211,7 +211,7 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
                   }
                 }}
                 onBlur={() => handleSaveRename(item.id)}
-                className="px-1.5 py-0.5 text-xs bg-white dark:bg-[#252528] text-neutral-900 dark:text-neutral-100 border border-neutral-400 dark:border-neutral-600 rounded outline-none focus:ring-1 focus:ring-neutral-700 dark:focus:ring-neutral-400 font-manrope min-w-[120px]"
+                className="px-1.5 py-0.5 text-xs bg-card text-foreground border border-border rounded outline-none focus:ring-1 focus:ring-accent font-manrope min-w-[120px]"
               />
             ) : (
               <span className="leading-relaxed tracking-tight">
@@ -234,7 +234,7 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
                   setAddingSubtopicToId(item.id);
                   setSubtopicInput("");
                 }}
-                className="w-5 h-5 flex items-center justify-center rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 cursor-pointer"
+                className="w-5 h-5 flex items-center justify-center rounded hover:bg-subtle text-muted-foreground hover:text-foreground cursor-pointer"
                 title="Add Subtopic"
               >
                 <Plus className="w-3 h-3" />
@@ -246,7 +246,7 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
                 e.stopPropagation();
                 setActiveMenuId(activeMenuId === item.id ? null : item.id);
               }}
-              className="w-5 h-5 flex items-center justify-center rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 cursor-pointer"
+              className="w-5 h-5 flex items-center justify-center rounded hover:bg-subtle text-muted-foreground hover:text-foreground cursor-pointer"
               title="Options"
             >
               <MoreHorizontal className="w-3 h-3" />
@@ -256,10 +256,10 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
           {/* Context Popover Menu */}
           {activeMenuId === item.id && (
             <div
-              className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-[#242426] rounded-xl shadow-xl border border-neutral-200 dark:border-neutral-700 py-1.5 z-50 text-xs text-neutral-700 dark:text-neutral-200 animate-in fade-in zoom-in-95 duration-100"
+              className="absolute right-0 top-full mt-1 w-44 bg-card rounded-xl shadow-xl border border-border py-1.5 z-50 text-xs text-foreground animate-in fade-in zoom-in-95 duration-100"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="px-3 py-1 font-semibold text-[10px] text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
+              <div className="px-3 py-1 font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
                 Progress Status
               </div>
 
@@ -268,7 +268,7 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
                   onUpdateStatus(item.id, "done");
                   setActiveMenuId(null);
                 }}
-                className="w-full px-3 py-1 text-left flex items-center justify-between hover:bg-blue-50 dark:hover:bg-blue-950/40 text-[#0066FF] dark:text-blue-400 font-medium cursor-pointer"
+                className="w-full px-3 py-1 text-left flex items-center justify-between hover:bg-status-done-bg text-status-done-fg font-medium cursor-pointer"
               >
                 <span>Done</span>
                 {item.status === "done" && <Check className="w-3 h-3" />}
@@ -279,7 +279,7 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
                   onUpdateStatus(item.id, "partial");
                   setActiveMenuId(null);
                 }}
-                className="w-full px-3 py-1 text-left flex items-center justify-between hover:bg-green-50 dark:hover:bg-emerald-950/40 text-[#28A745] dark:text-emerald-400 font-medium cursor-pointer"
+                className="w-full px-3 py-1 text-left flex items-center justify-between hover:bg-status-partial-bg text-status-partial-fg font-medium cursor-pointer"
               >
                 <span>Partially</span>
                 {item.status === "partial" && <Check className="w-3 h-3" />}
@@ -290,7 +290,7 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
                   onUpdateStatus(item.id, "barely");
                   setActiveMenuId(null);
                 }}
-                className="w-full px-3 py-1 text-left flex items-center justify-between hover:bg-red-50 dark:hover:bg-rose-950/40 text-[#E53E3E] dark:text-rose-400 font-medium cursor-pointer"
+                className="w-full px-3 py-1 text-left flex items-center justify-between hover:bg-status-barely-bg text-status-barely-fg font-medium cursor-pointer"
               >
                 <span>Barely</span>
                 {item.status === "barely" && <Check className="w-3 h-3" />}
@@ -301,13 +301,13 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
                   onUpdateStatus(item.id, "untouched");
                   setActiveMenuId(null);
                 }}
-                className="w-full px-3 py-1 text-left flex items-center justify-between hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 cursor-pointer"
+                className="w-full px-3 py-1 text-left flex items-center justify-between hover:bg-subtle text-foreground-subtle cursor-pointer"
               >
                 <span>Untouched</span>
                 {item.status === "untouched" && <Check className="w-3 h-3" />}
               </button>
 
-              <div className="my-1 border-t border-neutral-100 dark:border-neutral-700" />
+              <div className="my-1 border-t border-border-subtle" />
 
               {/* Note Toggle */}
               {onToggleNote && (
@@ -316,7 +316,7 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
                     onToggleNote(item.id);
                     setActiveMenuId(null);
                   }}
-                  className="w-full px-3 py-1 text-left flex items-center gap-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 cursor-pointer"
+                  className="w-full px-3 py-1 text-left flex items-center gap-2 hover:bg-subtle text-foreground-subtle cursor-pointer"
                 >
                   <FileText className="w-3 h-3" />
                   <span>{item.hasNote ? "Remove Note" : "Create Note"}</span>
@@ -331,7 +331,7 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
                     setAddingSubtopicToId(item.id);
                     setSubtopicInput("");
                   }}
-                  className="w-full px-3 py-1 text-left flex items-center gap-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 cursor-pointer"
+                  className="w-full px-3 py-1 text-left flex items-center gap-2 hover:bg-subtle text-foreground-subtle cursor-pointer"
                 >
                   <Plus className="w-3 h-3" />
                   <span>Add Subtopic</span>
@@ -346,9 +346,9 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
                     setEditingTopicId(item.id);
                     setEditingTopicTitle(item.title);
                   }}
-                  className="w-full px-3 py-1 text-left flex items-center gap-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 cursor-pointer"
+                  className="w-full px-3 py-1 text-left flex items-center gap-2 hover:bg-subtle text-foreground-subtle cursor-pointer"
                 >
-                  <Pencil className="w-3 h-3 text-neutral-500 dark:text-neutral-400" />
+                  <Pencil className="w-3 h-3 text-muted-foreground" />
                   <span>Rename Topic</span>
                 </button>
               )}
@@ -356,15 +356,15 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
               {/* Delete Topic */}
               {onDeleteTopic && (
                 <>
-                  <div className="my-1 border-t border-neutral-100 dark:border-neutral-700" />
+                  <div className="my-1 border-t border-border-subtle" />
                   <button
                     onClick={() => {
                       onDeleteTopic(item.id);
                       setActiveMenuId(null);
                     }}
-                    className="w-full px-3 py-1 text-left flex items-center gap-2 hover:bg-red-50 dark:hover:bg-rose-950/40 text-red-600 dark:text-red-400 font-medium cursor-pointer"
+                    className="w-full px-3 py-1 text-left flex items-center gap-2 hover:bg-red-500/10 text-red-500 font-medium cursor-pointer"
                   >
-                    <Trash2 className="w-3 h-3 text-red-500 dark:text-red-400" />
+                    <Trash2 className="w-3 h-3 text-red-500" />
                     <span>Delete Topic</span>
                   </button>
                 </>
@@ -379,7 +379,7 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
             className="flex items-center gap-1.5 py-1 pr-2"
             style={{ paddingLeft: `${Math.max((level + 1) * 14 + 4, 18)}px` }}
           >
-            <CornerDownRight className="w-3 h-3 text-neutral-400 dark:text-neutral-500 flex-shrink-0" />
+            <CornerDownRight className="w-3 h-3 text-muted-foreground flex-shrink-0" />
             <input
               type="text"
               autoFocus
@@ -390,18 +390,18 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
                 if (e.key === "Escape") setAddingSubtopicToId(null);
               }}
               placeholder="New subtopic title..."
-              className="flex-1 px-2 py-0.5 text-xs bg-white dark:bg-[#252528] text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded outline-none focus:border-neutral-500 dark:focus:border-neutral-400 font-manrope"
+              className="flex-1 px-2 py-0.5 text-xs bg-card text-foreground border border-border rounded outline-none focus:border-accent font-manrope"
             />
             <button
               onClick={() => handleCreateSubtopic(item.id)}
-              className="p-1 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded cursor-pointer"
+              className="p-1 text-emerald-600 hover:bg-emerald-500/10 rounded cursor-pointer"
               title="Add"
             >
               <Check className="w-3 h-3" />
             </button>
             <button
               onClick={() => setAddingSubtopicToId(null)}
-              className="p-1 text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded cursor-pointer"
+              className="p-1 text-muted-foreground hover:bg-subtle rounded cursor-pointer"
               title="Cancel"
             >
               <X className="w-3 h-3" />
@@ -414,7 +414,7 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
           <div className="relative pl-3">
             {/* Tree guide vertical line */}
             <div
-              className="absolute top-0 bottom-1 w-[1px] bg-black/20 dark:bg-white/20"
+              className="absolute top-0 bottom-1 w-[1px] bg-border"
               style={{ left: `${Math.max(level * 14 + 11, 10)}px` }}
             />
             <div className="space-y-0.5">
@@ -547,12 +547,12 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
       {isJsonMode ? (
         <div className="flex-1 flex flex-col h-full overflow-hidden animate-in fade-in duration-100">
           {/* Header bar */}
-          <div className="flex items-center justify-end px-3.5 py-2 border-b border-neutral-100 dark:border-neutral-800 text-xs select-none bg-neutral-50/50 dark:bg-[#1a1a1c]/50">
+          <div className="flex items-center justify-end px-3.5 py-2 border-b border-border-subtle text-xs select-none bg-subtle">
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={handleFormatJson}
-                className="px-2 py-1 text-[11px] font-mono text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded transition-colors cursor-pointer"
+                className="px-2 py-1 text-[11px] font-mono text-muted-foreground hover:text-foreground hover:bg-card rounded transition-colors cursor-pointer"
                 title="Format JSON indentation"
               >
                 Format
@@ -560,7 +560,7 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
               <button
                 type="button"
                 onClick={handleToggleJsonMode}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-200 text-white dark:text-neutral-950 font-medium text-[11px] transition-colors cursor-pointer shadow-2xs"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground font-medium text-[11px] transition-colors cursor-pointer shadow-2xs"
                 title="Return to Tree view (Esc or Ctrl+Enter)"
               >
                 <Braces className="w-3.5 h-3.5" />
@@ -570,7 +570,7 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
           </div>
 
           {/* Formatted live editor */}
-          <div className="relative flex-1 w-full h-full overflow-hidden bg-white dark:bg-[#1c1c1e]">
+          <div className="relative flex-1 w-full h-full overflow-hidden bg-card">
             <pre
               ref={preRef}
               aria-hidden="true"
@@ -591,8 +591,8 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
               spellCheck={false}
               className={`relative w-full h-full m-0 p-3.5 font-mono text-xs leading-[20px] whitespace-pre-wrap break-words bg-transparent outline-none resize-none overflow-y-auto text-transparent selection:text-transparent [tab-size:2] ${
                 isValidJson
-                  ? "caret-neutral-900 dark:caret-white selection:bg-blue-500/25 dark:selection:bg-blue-400/30"
-                  : "caret-red-500 dark:caret-rose-400 selection:bg-rose-500/25 dark:selection:bg-rose-400/30"
+                  ? "caret-foreground selection:bg-accent-subtle"
+                  : "caret-red-500 selection:bg-red-500/20"
               }`}
             />
           </div>
@@ -607,7 +607,7 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
                   type="button"
                   onClick={onUndo}
                   disabled={!canUndo}
-                  className="p-1 rounded-md text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-25 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-subtle disabled:opacity-25 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-colors cursor-pointer"
                   title="Undo tree change (Ctrl+Z)"
                   aria-label="Undo tree change"
                 >
@@ -619,7 +619,7 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
                   type="button"
                   onClick={onRedo}
                   disabled={!canRedo}
-                  className="p-1 rounded-md text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-25 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-subtle disabled:opacity-25 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-colors cursor-pointer"
                   title="Redo tree change (Ctrl+Y)"
                   aria-label="Redo tree change"
                 >
@@ -629,7 +629,7 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
               <button
                 type="button"
                 onClick={handleToggleJsonMode}
-                className="p-1 rounded-md text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+                className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-subtle transition-colors cursor-pointer"
                 title="Edit tree as JSON"
                 aria-label="Edit tree as JSON"
               >
@@ -654,18 +654,18 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
                     if (e.key === "Escape") setIsAddingRoot(false);
                   }}
                   placeholder="New module or unit title..."
-                  className="flex-1 px-2.5 py-1 text-xs bg-white dark:bg-[#252528] text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg outline-none focus:border-neutral-500 dark:focus:border-neutral-400 font-manrope"
+                  className="flex-1 px-2.5 py-1 text-xs bg-card text-foreground border border-border rounded-lg outline-none focus:border-accent font-manrope"
                 />
                 <button
                   onClick={handleCreateRootTopic}
-                  className="p-1 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded cursor-pointer"
+                  className="p-1 text-emerald-600 hover:bg-emerald-500/10 rounded cursor-pointer"
                   title="Add"
                 >
                   <Check className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => setIsAddingRoot(false)}
-                  className="p-1 text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded cursor-pointer"
+                  className="p-1 text-muted-foreground hover:bg-subtle rounded cursor-pointer"
                   title="Cancel"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -676,15 +676,15 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
 
           {/* Add Topic Root Button */}
           {onAddTopic && !isAddingRoot && (
-            <div className="pt-4 mt-6 border-t border-neutral-100 dark:border-neutral-800">
+            <div className="pt-4 mt-6 border-t border-border-subtle">
               <button
                 onClick={() => {
                   setIsAddingRoot(true);
                   setRootInput("");
                 }}
-                className="w-full py-2 px-3 border border-dashed border-neutral-300 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                className="w-full py-2 px-3 border border-dashed border-border hover:border-border hover:bg-subtle text-foreground-subtle rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               >
-                <Plus className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
+                <Plus className="w-3.5 h-3.5 text-muted-foreground" />
                 <span>Add Topic</span>
               </button>
             </div>

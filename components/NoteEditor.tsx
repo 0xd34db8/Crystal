@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import {
@@ -331,7 +331,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
     editorProps: {
       attributes: {
         class:
-          "prose dark:prose-invert max-w-none focus:outline-none min-h-[350px] text-sm leading-relaxed text-neutral-800 dark:text-neutral-200",
+          "prose max-w-none focus:outline-none min-h-[350px] text-sm leading-relaxed text-foreground",
       },
       handlePaste: (view, event) => {
         // 1. Direct image paste from clipboard via Ctrl+V
@@ -556,14 +556,14 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
 
   if (!selectedTopic) {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-8 text-neutral-400 dark:text-neutral-500 select-none font-manrope">
-        <div className="w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-4 text-neutral-300 dark:text-neutral-600">
+      <div className="h-full flex flex-col items-center justify-center p-8 text-muted-foreground select-none font-manrope">
+        <div className="w-16 h-16 rounded-full bg-subtle flex items-center justify-center mb-4 text-muted-foreground">
           <MessageSquare className="w-8 h-8" />
         </div>
-        <h3 className="text-xl font-light text-neutral-600 dark:text-neutral-300 mb-1">
+        <h3 className="text-xl font-light text-foreground-subtle mb-1">
           Select a topic
         </h3>
-        <p className="text-xs text-neutral-400 dark:text-neutral-500 text-center max-w-xs">
+        <p className="text-xs text-muted-foreground text-center max-w-xs">
           Click on any topic in the syllabus tree to view or start taking
           structured notes.
         </p>
@@ -581,7 +581,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
               <button
                 type="button"
                 onClick={onBackToTree}
-                className="md:hidden flex items-center gap-1 px-2 py-1 text-xs text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+                className="md:hidden flex items-center gap-1 px-2 py-1 text-xs text-foreground-subtle hover:text-foreground rounded-md hover:bg-subtle transition-colors cursor-pointer"
                 title="Back to Topics"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
@@ -594,7 +594,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer"
+            className="p-1 hover:bg-subtle rounded-full text-muted-foreground hover:text-foreground cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -618,7 +618,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                 }}
                 onBlur={handleSaveTitle}
                 autoFocus
-                className="text-2xl md:text-3xl font-light text-neutral-900 dark:text-neutral-100 tracking-tight text-center bg-transparent border-b-2 border-blue-500 focus:outline-none px-2 py-0.5 w-full font-manrope"
+                className="text-2xl md:text-3xl font-light text-foreground tracking-tight text-center bg-transparent border-b-2 border-accent focus:outline-none px-2 py-0.5 w-full font-manrope"
               />
             </div>
           ) : (
@@ -628,10 +628,10 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                 setTitleValue(selectedTopic.title);
                 setIsEditingTitle(true);
               }}
-              className="group inline-flex items-center justify-center gap-2 px-3 py-1 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer text-center max-w-full"
+              className="group inline-flex items-center justify-center gap-2 px-3 py-1 rounded-xl hover:bg-subtle transition-colors cursor-pointer text-center max-w-full"
               title="Click to rename topic"
             >
-              <h2 className="text-2xl md:text-3xl font-light text-neutral-900 dark:text-neutral-100 tracking-tight truncate">
+              <h2 className="text-2xl md:text-3xl font-light text-foreground tracking-tight truncate">
                 {selectedTopic.title}
               </h2>
               <Edit3 className="w-4 h-4 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
@@ -639,7 +639,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           )}
 
           <div className="space-y-4">
-            <p className="text-sm font-light text-neutral-500 dark:text-neutral-400 italic">
+            <p className="text-sm font-light text-muted-foreground italic">
               no notes yet
             </p>
 
@@ -657,7 +657,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                   };
                   onSaveNote(selectedTopic.id, newNote);
                 }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-200 text-white dark:text-neutral-950 rounded-full text-xs font-medium shadow-sm transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-hover text-primary-foreground rounded-full text-xs font-medium shadow-sm transition-all cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Create Note</span>
@@ -698,14 +698,14 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             </div>
 
             {aiError && (
-              <div className="p-3 bg-red-50 dark:bg-rose-950/40 border border-red-200 dark:border-rose-900 rounded-xl text-xs text-red-700 dark:text-rose-300 flex items-start gap-2 text-left">
+              <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-500 flex items-start gap-2 text-left">
                 <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
                 <div className="space-y-1">
                   <span>{aiError}</span>
                   <div>
                     <button
                       onClick={() => setIsApiKeyModalOpen(true)}
-                      className="text-xs font-medium text-red-800 dark:text-rose-200 underline"
+                      className="text-xs font-medium text-red-500 underline"
                     >
                       Configure API Key
                     </button>
@@ -729,10 +729,10 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   const getBtnClass = (isActive: boolean, isDisabled: boolean = false) =>
     `p-1.5 rounded transition-colors cursor-pointer ${
       isDisabled
-        ? "text-neutral-300 dark:text-neutral-600 cursor-not-allowed"
+        ? "text-muted-foreground/40 cursor-not-allowed"
         : isActive
-          ? "bg-neutral-200 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 font-semibold"
-          : "text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
+          ? "bg-card text-foreground font-semibold shadow-xs"
+          : "text-foreground-subtle hover:bg-card hover:text-foreground"
     }`;
 
   return (
@@ -740,19 +740,19 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       data-editor-pane="true"
       className={`flex flex-col font-manrope transition-all duration-200 ${
         isFullscreen
-          ? "fixed inset-0 z-50 bg-white dark:bg-[#1C1C1E] h-screen w-screen overflow-hidden"
+          ? "fixed inset-0 z-50 bg-card h-screen w-screen overflow-hidden"
           : "h-full overflow-hidden"
       }`}
     >
       {/* Top Header: Centered Clickable / Inline Editable Topic Title */}
-      <div className="relative pt-4 sm:pt-5 pb-3 sm:pb-4 px-3 sm:px-6 md:px-8 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between gap-2">
+      <div className="relative pt-4 sm:pt-5 pb-3 sm:pb-4 px-3 sm:px-6 md:px-8 border-b border-border-subtle flex items-center justify-between gap-2">
         {/* Left: Mobile Back Button + Status Selector Pill */}
         <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 z-10">
           {onBackToTree && (
             <button
               type="button"
               onClick={onBackToTree}
-              className="md:hidden flex items-center gap-1 px-2 py-1 text-xs text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+              className="md:hidden flex items-center gap-1 px-2 py-1 text-xs text-foreground-subtle hover:text-foreground rounded-lg hover:bg-subtle transition-colors cursor-pointer"
               title="Back to Topics"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
@@ -760,7 +760,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             </button>
           )}
 
-          <span className="hidden sm:inline text-[11px] text-neutral-400 dark:text-neutral-500 uppercase tracking-wider font-medium">
+          <span className="hidden sm:inline text-[11px] text-muted-foreground uppercase tracking-wider font-medium">
             Status:
           </span>
           <select
@@ -770,12 +770,12 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             }
             className={`text-xs font-medium py-1 px-2 sm:px-2.5 rounded-full border outline-none cursor-pointer transition-colors ${
               selectedTopic.status === "done"
-                ? "bg-blue-50 dark:bg-blue-950/60 border-blue-200 dark:border-blue-800 text-[#0066FF] dark:text-blue-400"
+                ? "bg-status-done-bg border-status-done-border text-status-done-fg"
                 : selectedTopic.status === "partial"
-                  ? "bg-green-50 dark:bg-emerald-950/60 border-green-200 dark:border-emerald-800 text-[#28A745] dark:text-emerald-400"
+                  ? "bg-status-partial-bg border-status-partial-border text-status-partial-fg"
                   : selectedTopic.status === "barely"
-                    ? "bg-red-50 dark:bg-rose-950/60 border-red-200 dark:border-rose-800 text-[#E53E3E] dark:text-rose-400"
-                    : "bg-neutral-100 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300"
+                    ? "bg-status-barely-bg border-status-barely-border text-status-barely-fg"
+                    : "bg-subtle border-border text-foreground-subtle"
             }`}
           >
             <option value="untouched">Untouched</option>
@@ -802,7 +802,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
               }}
               onBlur={handleSaveTitle}
               autoFocus
-              className="text-lg sm:text-2xl font-light text-neutral-900 dark:text-neutral-100 tracking-tight text-center bg-transparent border-b-2 border-blue-500 focus:outline-none px-2 py-0.5 w-full font-manrope"
+              className="text-lg sm:text-2xl font-light text-foreground tracking-tight text-center bg-transparent border-b-2 border-accent focus:outline-none px-2 py-0.5 w-full font-manrope"
             />
           </div>
         ) : (
@@ -813,10 +813,10 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                 setTitleValue(selectedTopic.title);
                 setIsEditingTitle(true);
               }}
-              className="group flex items-center gap-1.5 px-2 sm:px-3 py-1 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer max-w-full"
+              className="group flex items-center gap-1.5 px-2 sm:px-3 py-1 rounded-xl hover:bg-subtle transition-colors cursor-pointer max-w-full"
               title="Click to rename topic"
             >
-              <h2 className="text-base sm:text-xl md:text-2xl font-light text-neutral-900 dark:text-neutral-100 tracking-tight truncate">
+              <h2 className="text-base sm:text-xl md:text-2xl font-light text-foreground tracking-tight truncate">
                 {selectedTopic.title}
               </h2>
               <Edit3 className="w-3.5 h-3.5 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 hidden sm:block" />
@@ -862,7 +862,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           <button
             type="button"
             onClick={toggleFullscreen}
-            className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors cursor-pointer"
+            className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-subtle text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             title={isFullscreen ? "Exit Fullscreen (Esc)" : "Fullscreen"}
             aria-label={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
           >
@@ -876,7 +876,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           <button
             type="button"
             onClick={handleClose}
-            className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors cursor-pointer"
+            className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-subtle text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             title="Close Note"
           >
             <X className="w-4 h-4" />
@@ -886,7 +886,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
 
       {/* MS Word-level Rich Text Formatting Toolbar */}
       {editor && (
-        <div className="px-3 sm:px-6 md:px-8 py-2 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-1 bg-neutral-50/70 dark:bg-[#18181A] text-neutral-600 dark:text-neutral-400 text-xs overflow-x-auto no-scrollbar flex-nowrap sm:flex-wrap">
+        <div className="px-3 sm:px-6 md:px-8 py-2 border-b border-border-subtle flex items-center gap-1 bg-subtle text-foreground-subtle text-xs overflow-x-auto no-scrollbar flex-nowrap sm:flex-wrap">
           {/* History: Undo / Redo */}
           <button
             type="button"
@@ -907,7 +907,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             <Redo2 className="w-3.5 h-3.5" />
           </button>
 
-          <div className="w-[1px] h-4 bg-neutral-200 dark:bg-neutral-700 mx-1" />
+          <div className="w-[1px] h-4 bg-border mx-1" />
 
           {/* Style Selector: Normal text, H1, H2, H3 */}
           <select
@@ -932,7 +932,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                   .run();
               }
             }}
-            className="text-xs bg-white dark:bg-[#222225] border border-neutral-200 dark:border-neutral-700 rounded-md px-2 py-1 text-neutral-700 dark:text-neutral-300 outline-none cursor-pointer hover:border-neutral-400 dark:hover:border-neutral-500 font-medium"
+            className="text-xs bg-card border border-border rounded-md px-2 py-1 text-foreground outline-none cursor-pointer hover:border-border font-medium"
             title="Text style"
           >
             <option value="p">Normal text</option>
@@ -941,7 +941,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             <option value="3">Heading 3 (Ctrl+Alt+3)</option>
           </select>
 
-          <div className="w-[1px] h-4 bg-neutral-200 dark:bg-neutral-700 mx-1" />
+          <div className="w-[1px] h-4 bg-border mx-1" />
 
           {/* Inline Marks: Bold, Italic, Underline, Strike, Highlight, Code */}
           <button
@@ -993,7 +993,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             <Code className="w-3.5 h-3.5" />
           </button>
 
-          <div className="w-[1px] h-4 bg-neutral-200 dark:bg-neutral-700 mx-1" />
+          <div className="w-[1px] h-4 bg-border mx-1" />
 
           {/* Lists & Structural Elements */}
           <button
@@ -1037,7 +1037,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             <FileCode className="w-3.5 h-3.5" />
           </button>
 
-          <div className="w-[1px] h-4 bg-neutral-200 dark:bg-neutral-700 mx-1" />
+          <div className="w-[1px] h-4 bg-border mx-1" />
 
           {/* Alignment */}
           <button
@@ -1077,7 +1077,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             <AlignJustify className="w-3.5 h-3.5" />
           </button>
 
-          <div className="w-[1px] h-4 bg-neutral-200 dark:bg-neutral-700 mx-1" />
+          <div className="w-[1px] h-4 bg-border mx-1" />
 
           {/* Horizontal Line & Clear Formatting */}
           <button
@@ -1103,12 +1103,12 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
 
       {/* Notion-style Floating Contextual Action for Pasted Image URLs */}
       {pendingEmbedUrl && (
-        <div className="mx-3 sm:mx-6 md:mx-8 my-2 p-2 sm:p-2.5 rounded-xl bg-blue-50/90 dark:bg-blue-950/70 border border-blue-200 dark:border-blue-800 flex items-center justify-between text-xs animate-in fade-in slide-in-from-top-1">
+        <div className="mx-3 sm:mx-6 md:mx-8 my-2 p-2 sm:p-2.5 rounded-xl bg-accent-subtle border border-accent/30 flex items-center justify-between text-xs animate-in fade-in slide-in-from-top-1">
           <div className="flex items-center gap-2 min-w-0">
             <ImageIcon className="w-4 h-4 text-blue-500 flex-shrink-0" />
-            <span className="text-neutral-600 dark:text-neutral-400 truncate max-w-[200px] sm:max-w-[280px]">
+            <span className="text-foreground-subtle truncate max-w-[200px] sm:max-w-[280px]">
               Image URL:{" "}
-              <span className="font-mono text-neutral-900 dark:text-neutral-200">
+              <span className="font-mono text-foreground">
                 {pendingEmbedUrl}
               </span>
             </span>
@@ -1124,7 +1124,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             <button
               type="button"
               onClick={() => setPendingEmbedUrl(null)}
-              className="px-2 sm:px-2.5 py-1 text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-300 rounded-lg transition-colors cursor-pointer"
+              className="px-2 sm:px-2.5 py-1 text-muted-foreground hover:text-foreground rounded-lg transition-colors cursor-pointer"
             >
               Keep as link
             </button>
@@ -1134,14 +1134,14 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
 
       {/* AI Error Notification Banner */}
       {aiError && (
-        <div className="px-4 sm:px-6 md:px-8 py-2 bg-red-50 dark:bg-rose-950/50 border-b border-red-200 dark:border-rose-900 flex items-center justify-between text-xs text-red-700 dark:text-rose-300">
+        <div className="px-4 sm:px-6 md:px-8 py-2 bg-red-500/10 border-b border-red-500/30 flex items-center justify-between text-xs text-red-500">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
             <span>{aiError}</span>
           </div>
           <button
             onClick={() => setAiError(null)}
-            className="p-1 text-red-400 hover:text-red-700 dark:hover:text-rose-200 cursor-pointer"
+            className="p-1 text-red-500 hover:text-red-600 cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
           </button>

@@ -26,7 +26,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   actions,
 }) => {
   return (
-    <header className="flex items-center justify-between px-4 sm:px-6 md:px-8 py-2.5 sm:py-3.5 bg-[#F9F9F9] dark:bg-[#121212] select-none font-manrope border-b border-black/5 dark:border-white/5 md:border-b-0">
+    <header className="flex items-center justify-between px-4 sm:px-6 md:px-8 py-2.5 sm:py-3.5 bg-background select-none font-manrope border-b border-border-subtle md:border-b-0">
       {/* Left: Crystal Logo + Title/FileName */}
       <div className="flex items-center gap-2.5 sm:gap-4 min-w-0 flex-1 mr-2">
         <Link href="/" title="Crystal Home" className="flex items-center flex-shrink-0">
@@ -36,7 +36,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         {titleElement ? (
           titleElement
         ) : (
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-light tracking-tight text-neutral-900 dark:text-neutral-100 truncate">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-light tracking-tight text-foreground truncate">
             Crystal
           </h1>
         )}
@@ -51,5 +51,3 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
     </header>
   );
 };
-
-

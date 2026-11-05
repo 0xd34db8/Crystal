@@ -12,52 +12,52 @@ interface MarkdownRendererProps {
 
 const customComponents: Components = {
   h1: ({ children }) => (
-    <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mt-5 mb-2.5 pb-1.5 border-b border-neutral-200 dark:border-neutral-800 tracking-tight font-manrope">
+    <h1 className="text-2xl font-bold text-foreground mt-5 mb-2.5 pb-1.5 border-b border-border-subtle tracking-tight font-manrope">
       {children}
     </h1>
   ),
   h2: ({ children }) => (
-    <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 mt-4 mb-2 pb-1 border-b border-neutral-100 dark:border-neutral-800 tracking-tight font-manrope">
+    <h2 className="text-xl font-bold text-foreground mt-4 mb-2 pb-1 border-b border-border-subtle tracking-tight font-manrope">
       {children}
     </h2>
   ),
   h3: ({ children }) => (
-    <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100 mt-3.5 mb-1.5 tracking-tight font-manrope">
+    <h3 className="text-base font-semibold text-foreground mt-3.5 mb-1.5 tracking-tight font-manrope">
       {children}
     </h3>
   ),
   h4: ({ children }) => (
-    <h4 className="text-sm font-semibold text-neutral-800 dark:text-neutral-200 mt-3 mb-1 font-manrope">
+    <h4 className="text-sm font-semibold text-foreground mt-3 mb-1 font-manrope">
       {children}
     </h4>
   ),
   p: ({ children }) => (
-    <p className="text-xs sm:text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed mb-3 font-manrope">
+    <p className="text-xs sm:text-sm text-foreground-subtle leading-relaxed mb-3 font-manrope">
       {children}
     </p>
   ),
   ul: ({ children }) => (
-    <ul className="list-disc list-outside pl-5 mb-3 text-xs sm:text-sm text-neutral-700 dark:text-neutral-300 space-y-1 font-manrope">
+    <ul className="list-disc list-outside pl-5 mb-3 text-xs sm:text-sm text-foreground-subtle space-y-1 font-manrope">
       {children}
     </ul>
   ),
   ol: ({ children }) => (
-    <ol className="list-decimal list-outside pl-5 mb-3 text-xs sm:text-sm text-neutral-700 dark:text-neutral-300 space-y-1 font-manrope">
+    <ol className="list-decimal list-outside pl-5 mb-3 text-xs sm:text-sm text-foreground-subtle space-y-1 font-manrope">
       {children}
     </ol>
   ),
   li: ({ children }) => (
-    <li className="text-neutral-700 dark:text-neutral-300 leading-relaxed font-manrope pl-0.5">
+    <li className="text-foreground-subtle leading-relaxed font-manrope pl-0.5">
       {children}
     </li>
   ),
   blockquote: ({ children }) => (
-    <blockquote className="border-l-4 border-blue-500 pl-4 py-1.5 my-3 text-xs sm:text-sm italic text-neutral-600 dark:text-neutral-300 bg-blue-50/30 dark:bg-blue-950/20 rounded-r font-manrope">
+    <blockquote className="border-l-4 border-accent pl-4 py-1.5 my-3 text-xs sm:text-sm italic text-foreground-subtle bg-accent-subtle rounded-r font-manrope">
       {children}
     </blockquote>
   ),
   pre: ({ children }) => (
-    <pre className="p-3.5 my-3 rounded-xl bg-neutral-900 dark:bg-neutral-950 text-neutral-100 font-mono text-xs overflow-x-auto leading-relaxed border border-neutral-800 shadow-xs">
+    <pre className="p-3.5 my-3 rounded-xl bg-neutral-900 text-neutral-100 font-mono text-xs overflow-x-auto leading-relaxed border border-border shadow-xs">
       {children}
     </pre>
   ),
@@ -66,7 +66,7 @@ const customComponents: Components = {
     if (isInline) {
       return (
         <code
-          className="px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 font-mono text-[11px] text-neutral-800 dark:text-neutral-200 font-medium"
+          className="px-1.5 py-0.5 rounded bg-subtle border border-border font-mono text-[11px] text-foreground font-medium"
           {...props}
         >
           {children}
@@ -80,33 +80,33 @@ const customComponents: Components = {
     );
   },
   strong: ({ children }) => (
-    <strong className="font-semibold text-neutral-900 dark:text-neutral-100 font-manrope">
+    <strong className="font-semibold text-foreground font-manrope">
       {children}
     </strong>
   ),
   em: ({ children }) => (
-    <em className="italic text-neutral-800 dark:text-neutral-200 font-manrope">{children}</em>
+    <em className="italic text-foreground-subtle font-manrope">{children}</em>
   ),
-  hr: () => <hr className="my-5 border-t border-neutral-200 dark:border-neutral-800" />,
+  hr: () => <hr className="my-5 border-t border-border-subtle" />,
   table: ({ children }) => (
-    <div className="overflow-x-auto my-3 border border-neutral-200 dark:border-neutral-700 rounded-xl">
+    <div className="overflow-x-auto my-3 border border-border rounded-xl">
       <table className="w-full text-xs text-left font-manrope border-collapse">
         {children}
       </table>
     </div>
   ),
   thead: ({ children }) => (
-    <thead className="bg-neutral-100 dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 font-semibold">
+    <thead className="bg-subtle border-b border-border text-foreground font-semibold">
       {children}
     </thead>
   ),
   th: ({ children }) => (
-    <th className="px-3 py-2 text-neutral-800 dark:text-neutral-200 font-semibold border-r border-neutral-200 dark:border-neutral-700 last:border-r-0">
+    <th className="px-3 py-2 text-foreground font-semibold border-r border-border last:border-r-0">
       {children}
     </th>
   ),
   td: ({ children }) => (
-    <td className="px-3 py-2 text-neutral-700 dark:text-neutral-300 border-t border-neutral-100 dark:border-neutral-800 border-r border-neutral-200 dark:border-neutral-700 last:border-r-0">
+    <td className="px-3 py-2 text-foreground-subtle border-t border-border-subtle border-r border-border last:border-r-0">
       {children}
     </td>
   ),
@@ -115,7 +115,7 @@ const customComponents: Components = {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline underline-offset-2 transition-colors font-manrope"
+      className="text-accent hover:underline underline-offset-2 transition-colors font-manrope"
     >
       {children}
     </a>
@@ -142,7 +142,7 @@ const customComponents: Components = {
                 }
               : undefined
           }
-          className="rounded-xl border border-neutral-200 dark:border-neutral-700 max-h-96 object-contain shadow-xs"
+          className="rounded-xl border border-border max-h-96 object-contain shadow-xs"
         />
       </div>
     );
@@ -156,12 +156,20 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
 }) => {
   return (
     <div
-      className={`prose prose-neutral dark:prose-invert max-w-none text-neutral-800 dark:text-neutral-200 leading-relaxed font-manrope ${className}`}
+      className={`prose max-w-none text-foreground leading-relaxed font-manrope ${className}`}
     >
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={customComponents}>
-        {content || emptyPlaceholder}
-      </ReactMarkdown>
+      {content && content.trim() ? (
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          components={customComponents}
+        >
+          {content}
+        </ReactMarkdown>
+      ) : (
+        <p className="text-muted-foreground italic text-xs sm:text-sm font-manrope">
+          {emptyPlaceholder}
+        </p>
+      )}
     </div>
   );
 };
-

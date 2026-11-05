@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -11,6 +11,7 @@ import {
   saveSyllabus,
   setActiveSyllabusId,
   deleteSyllabus,
+  restoreSyllabus,
   getApiKey,
   getAIConfig,
   cleanupUnusedDrafts,
@@ -33,6 +34,7 @@ import {
   FileText,
   Copy,
   Check,
+  Undo2,
 } from "lucide-react";
 
 export default function HomePage() {
@@ -47,6 +49,21 @@ export default function HomePage() {
   const [coreSyllabusOnly, setCoreSyllabusOnly] = useState(true);
   const [isOpeningSyllabus, setIsOpeningSyllabus] = useState(false);
   const isProcessingPasteRef = useRef(false);
+
+  // Undo deletion state
+  const [lastDeletedSyllabus, setLastDeletedSyllabus] = useState<{
+    file: SyllabusData;
+    index: number;
+  } | null>(null);
+  const undoTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (undoTimerRef.current) {
+        clearTimeout(undoTimerRef.current);
+      }
+    };
+  }, []);
 
   // AI & Processing state
   const [isFormatting, setIsFormatting] = useState(false);
@@ -176,8 +193,36 @@ export default function HomePage() {
 
   const handleDeleteSyllabus = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
+    const fileIndex = syllabi.findIndex((s) => s.id === id);
+    const deletedFile = syllabi.find((s) => s.id === id);
+    if (deletedFile) {
+      setLastDeletedSyllabus({
+        file: deletedFile,
+        index: fileIndex >= 0 ? fileIndex : 0,
+      });
+      if (undoTimerRef.current) {
+        clearTimeout(undoTimerRef.current);
+      }
+      undoTimerRef.current = setTimeout(() => {
+        setLastDeletedSyllabus(null);
+      }, 10000);
+    }
     const updated = deleteSyllabus(id);
     setSyllabi(updated);
+  };
+
+  const handleUndoDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!lastDeletedSyllabus) return;
+    if (undoTimerRef.current) {
+      clearTimeout(undoTimerRef.current);
+    }
+    const updated = restoreSyllabus(
+      lastDeletedSyllabus.file,
+      lastDeletedSyllabus.index,
+    );
+    setSyllabi(updated);
+    setLastDeletedSyllabus(null);
   };
 
   const handleSelectedFile = async (file: File) => {
@@ -351,41 +396,41 @@ export default function HomePage() {
         onClick={() => setIsApiKeyModalOpen(true)}
         className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-normal transition-all cursor-pointer font-manrope ${
           apiKey
-            ? "bg-emerald-50/90 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60"
-            : "bg-white dark:bg-[#1C1C1E] border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:border-neutral-400 dark:hover:border-neutral-600 shadow-2xs"
+            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/20"
+            : "bg-card border-border text-foreground-subtle hover:border-border shadow-2xs hover:bg-subtle"
         }`}
         title="Configure API Key"
       >
-        <Key className="w-3.5 h-3.5 text-neutral-600 dark:text-neutral-400" />
+        <Key className="w-3.5 h-3.5 text-foreground-subtle" />
         <span>{apiKey ? "API Key Configured" : "Configure API Key"}</span>
       </button>
     </div>
   );
 
   return (
-    <main className="min-h-screen lg:h-screen w-full bg-[#F9F9F9] dark:bg-[#121212] flex flex-col overflow-y-auto lg:overflow-hidden font-manrope">
+    <main className="min-h-screen lg:h-screen w-full bg-background flex flex-col overflow-y-auto lg:overflow-hidden font-manrope">
       {/* Unified Window Header */}
       <AppHeader actions={headerActions} />
 
       {/* Main Content Layout: Split Panes (Import & Recents) */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-5 md:gap-6 px-4 sm:px-6 md:px-8 py-4 sm:py-5 min-h-0 lg:overflow-hidden">
         {/* Left Column: Import New Syllabus */}
-        <div className="lg:col-span-5 xl:col-span-5 bg-white dark:bg-[#1C1C1E] rounded-2xl md:rounded-[26px] border border-black/15 dark:border-white/10 shadow-xs p-5 sm:p-6 flex flex-col justify-between overflow-y-auto">
+        <div className="lg:col-span-5 xl:col-span-5 bg-card rounded-2xl md:rounded-[26px] border border-border shadow-xs p-5 sm:p-6 flex flex-col justify-between overflow-y-auto">
           <div className="space-y-5">
             <div>
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-light text-neutral-900 dark:text-neutral-100 tracking-tight">
+                <h2 className="text-xl font-light text-foreground tracking-tight">
                   Add New Syllabus
                 </h2>
               </div>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 PDF, Word (.docx) or .TXT supported
               </p>
             </div>
 
             {/* Title input */}
             <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
+              <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                 Syllabus Title
               </label>
               <input
@@ -393,13 +438,13 @@ export default function HomePage() {
                 value={syllabusName}
                 onChange={(e) => setSyllabusName(e.target.value)}
                 placeholder="e.g. Machine Learning, Cloud Architecture"
-                className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-[#252528] border border-neutral-200 dark:border-neutral-700 rounded-2xl text-xs text-neutral-800 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 outline-none focus:border-neutral-500 dark:focus:border-neutral-400 focus:bg-white dark:focus:bg-[#2A2A2D] transition-all font-manrope"
+                className="w-full px-4 py-2.5 bg-subtle border border-border rounded-2xl text-xs text-foreground placeholder-muted-foreground outline-none focus:border-accent focus:bg-card transition-all font-manrope"
               />
             </div>
 
             {/* Tab selector and Copy Prompt */}
             <div className="flex flex-col sm:flex-row gap-2">
-              <div className="flex gap-2 p-1 bg-neutral-100 dark:bg-[#252528] rounded-xl text-xs flex-1">
+              <div className="flex gap-2 p-1 bg-subtle rounded-xl text-xs flex-1">
                 <button
                   type="button"
                   onClick={() => {
@@ -408,8 +453,8 @@ export default function HomePage() {
                   }}
                   className={`flex-1 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
                     activeTab === "file"
-                      ? "bg-white dark:bg-[#1C1C1E] text-neutral-900 dark:text-neutral-100 shadow-xs"
-                      : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200"
+                      ? "bg-card text-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   Upload File
@@ -422,8 +467,8 @@ export default function HomePage() {
                   }}
                   className={`flex-1 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
                     activeTab === "text"
-                      ? "bg-white dark:bg-[#1C1C1E] text-neutral-900 dark:text-neutral-100 shadow-xs"
-                      : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200"
+                      ? "bg-card text-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   Paste Text
@@ -434,11 +479,11 @@ export default function HomePage() {
                 type="button"
                 onClick={handleCopyTreePrompt}
                 title="Copy prompt to attach syllabus and generate tree JSON in ChatGPT, Claude, Gemini, etc."
-                className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded-xl text-xs font-medium transition-all cursor-pointer whitespace-nowrap"
+                className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-subtle hover:bg-card text-foreground-subtle rounded-xl text-xs font-medium transition-all cursor-pointer whitespace-nowrap"
               >
                 {hasCopiedTreePrompt ? (
                   <>
-                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <Check className="w-3.5 h-3.5 text-emerald-500" />
                   </>
                 ) : (
                   <>
@@ -465,10 +510,10 @@ export default function HomePage() {
                 }}
                 className={`flex flex-col items-center justify-center p-7 border-2 border-dashed rounded-2xl cursor-pointer transition-all ${
                   dragOver
-                    ? "border-blue-500 bg-blue-50/50 dark:bg-blue-950/20"
+                    ? "border-accent bg-accent-subtle"
                     : uploadedFile
-                      ? "border-emerald-300 dark:border-emerald-700 bg-emerald-50/30 dark:bg-emerald-950/20"
-                      : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600 bg-neutral-50/60 dark:bg-[#202022]"
+                      ? "border-emerald-500/40 bg-emerald-500/10"
+                      : "border-border hover:border-border-subtle bg-subtle"
                 }`}
               >
                 <input
@@ -480,19 +525,19 @@ export default function HomePage() {
                   }}
                   className="hidden"
                 />
-                <div className="w-12 h-12 rounded-full bg-white dark:bg-[#1C1C1E] shadow-xs flex items-center justify-center text-neutral-600 dark:text-neutral-300 mb-3 border border-black/5 dark:border-white/10">
+                <div className="w-12 h-12 rounded-full bg-card shadow-xs flex items-center justify-center text-foreground-subtle mb-3 border border-border">
                   {uploadedFile ? (
-                    <FileText className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                    <FileText className="w-5 h-5 text-emerald-500" />
                   ) : (
-                    <Upload className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
+                    <Upload className="w-5 h-5 text-foreground-subtle" />
                   )}
                 </div>
-                <span className="text-xs font-medium text-neutral-800 dark:text-neutral-200 text-center truncate max-w-[260px]">
+                <span className="text-xs font-medium text-foreground text-center truncate max-w-[260px]">
                   {uploadedFile
                     ? uploadedFile.name
                     : "Click or drag & drop syllabus file"}
                 </span>
-                <span className="text-[10px] text-neutral-400 dark:text-neutral-500 mt-1">
+                <span className="text-[10px] text-muted-foreground mt-1">
                   Supports PDF, Word (.docx), TXT, or .crystal (paste JSON
                   anywhere to open)
                 </span>
@@ -513,7 +558,7 @@ export default function HomePage() {
                     }
                   }}
                   placeholder="Paste unformatted syllabus text or generated JSON here (pasting JSON will automatically open it):&#10;&#10;UNIT I: Introduction to Machine Learning&#10;Types of Learning: Supervised, Unsupervised, Reinforcement&#10;Theory of Generalization: Generalization bound, VC Dimension&#10;Decision Trees, Neural Networks, Ensemble Learning"
-                  className="w-full p-3.5 bg-neutral-50 dark:bg-[#252528] border border-neutral-200 dark:border-neutral-700 rounded-2xl text-xs font-mono text-neutral-800 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 outline-none focus:border-neutral-500 dark:focus:border-neutral-400 focus:bg-white dark:focus:bg-[#2A2A2D] resize-none transition-all leading-relaxed"
+                  className="w-full p-3.5 bg-subtle border border-border rounded-2xl text-xs font-mono text-foreground placeholder-muted-foreground outline-none focus:border-accent focus:bg-card resize-none transition-all leading-relaxed"
                 />
               </div>
             )}
@@ -521,16 +566,16 @@ export default function HomePage() {
             {/* Core Syllabus Only Checkbox */}
             <div className="flex items-center pt-0.5">
               <label
-                className="inline-flex items-center gap-2 cursor-pointer select-none text-xs text-neutral-600 dark:text-neutral-400 group"
+                className="inline-flex items-center gap-2 cursor-pointer select-none text-xs text-muted-foreground group"
                 title="Excludes non-core sections like lab experiments, learning outcomes, and grading schemes."
               >
                 <input
                   type="checkbox"
                   checked={coreSyllabusOnly}
                   onChange={(e) => setCoreSyllabusOnly(e.target.checked)}
-                  className="w-3.5 h-3.5 rounded border-neutral-300 dark:border-neutral-600 text-neutral-900 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-neutral-900 dark:accent-neutral-100"
+                  className="w-3.5 h-3.5 rounded border-border text-foreground focus:ring-0 focus:ring-offset-0 cursor-pointer accent-accent"
                 />
-                <span className="font-normal text-neutral-700 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-neutral-100 transition-colors">
+                <span className="font-normal text-foreground-subtle group-hover:text-foreground transition-colors">
                   Core Syllabus Only
                 </span>
               </label>
@@ -538,7 +583,7 @@ export default function HomePage() {
 
             {/* Error Message Notice */}
             {errorMessage && (
-              <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl text-xs text-red-700 dark:text-red-300 flex items-start gap-2">
+              <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-500 flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
                 <div className="space-y-1">
                   <p>{errorMessage}</p>
@@ -546,7 +591,7 @@ export default function HomePage() {
                     <button
                       type="button"
                       onClick={() => setIsApiKeyModalOpen(true)}
-                      className="text-xs font-medium text-red-800 dark:text-red-300 underline cursor-pointer"
+                      className="text-xs font-medium text-red-500 underline cursor-pointer"
                     >
                       Configure your API key now
                     </button>
@@ -557,11 +602,11 @@ export default function HomePage() {
           </div>
 
           {/* Submit Action */}
-          <div className="pt-4 mt-4 border-t border-neutral-100 dark:border-neutral-800 space-y-3">
+          <div className="pt-4 mt-4 border-t border-border-subtle space-y-3">
             {/* Loading Progress Bar */}
             {isFormatting && (
-              <div className="space-y-1.5 p-3 rounded-2xl bg-neutral-50 dark:bg-[#252528] border border-neutral-200/80 dark:border-neutral-700 animate-in fade-in duration-200">
-                <div className="flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-300">
+              <div className="space-y-1.5 p-3 rounded-2xl bg-subtle border border-border animate-in fade-in duration-200">
+                <div className="flex items-center justify-between text-xs text-foreground-subtle">
                   <span className="font-medium truncate max-w-[200px]">
                     {elapsedSeconds > 18
                       ? "Finalizing syllabus topics..."
@@ -569,13 +614,13 @@ export default function HomePage() {
                         ? "AI is structuring syllabus tree..."
                         : statusMessage || "Processing syllabus..."}
                   </span>
-                  <span className="font-mono text-[11px] text-neutral-400 dark:text-neutral-500">
+                  <span className="font-mono text-[11px] text-muted-foreground">
                     {elapsedSeconds}s
                   </span>
                 </div>
-                <div className="w-full bg-neutral-200/70 dark:bg-neutral-700 h-1.5 rounded-full overflow-hidden">
+                <div className="w-full bg-border/40 h-1.5 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-neutral-900 dark:bg-white rounded-full transition-all duration-300 ease-out"
+                    className="h-full bg-foreground rounded-full transition-all duration-300 ease-out"
                     style={{ width: `${progressPct}%` }}
                   />
                 </div>
@@ -586,11 +631,11 @@ export default function HomePage() {
               type="button"
               disabled={isFormatting}
               onClick={() => handleImport(true)}
-              className="w-full py-3 bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-200 text-white dark:text-neutral-950 rounded-2xl text-xs font-medium tracking-tight shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer font-manrope disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full py-3 bg-primary hover:bg-primary-hover text-primary-foreground rounded-2xl text-xs font-medium tracking-tight shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer font-manrope disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isFormatting ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin text-white dark:text-neutral-950" />
+                  <Loader2 className="w-4 h-4 animate-spin text-primary-foreground" />
                   <span>
                     {statusMessage || "Processing syllabus..."} (
                     {elapsedSeconds}s)
@@ -609,7 +654,7 @@ export default function HomePage() {
               type="button"
               disabled={isFormatting}
               onClick={() => handleImport(false)}
-              className="w-full py-2.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:text-neutral-300 rounded-2xl text-xs font-normal transition-all cursor-pointer font-manrope disabled:opacity-60"
+              className="w-full py-2.5 bg-subtle hover:bg-card text-foreground-subtle rounded-2xl text-xs font-normal transition-all cursor-pointer font-manrope disabled:opacity-60"
             >
               Start editing offline (without AI)
             </button>
@@ -617,20 +662,34 @@ export default function HomePage() {
         </div>
 
         {/* Right Column: Recently Worked on Files */}
-        <div className="lg:col-span-7 xl:col-span-7 bg-white dark:bg-[#1C1C1E] rounded-2xl md:rounded-[26px] border border-black/15 dark:border-white/10 shadow-xs p-5 sm:p-6 flex flex-col min-h-[300px] lg:min-h-0 overflow-hidden">
-          <div className="flex items-center justify-between pb-4 border-b border-neutral-100 dark:border-neutral-800">
+        <div className="lg:col-span-7 xl:col-span-7 bg-card rounded-2xl md:rounded-[26px] border border-border shadow-xs p-5 sm:p-6 flex flex-col min-h-[300px] lg:min-h-0 overflow-hidden">
+          <div className="flex items-center justify-between pb-4 border-b border-border-subtle">
             <div>
-              <h2 className="text-xl font-light text-neutral-900 dark:text-neutral-100 tracking-tight">
+              <h2 className="text-xl font-light text-foreground tracking-tight">
                 Recent Files
               </h2>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 Continue where you left off
               </p>
             </div>
 
-            <span className="text-xs font-mono text-neutral-400 dark:text-neutral-500">
-              {syllabi.length} files
-            </span>
+            <div className="flex items-center gap-2.5">
+              {lastDeletedSyllabus && (
+                <button
+                  type="button"
+                  onClick={handleUndoDelete}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs text-accent hover:opacity-80 bg-accent-subtle border border-accent/30 rounded-lg transition-all cursor-pointer font-medium shadow-2xs animate-in fade-in zoom-in-95 duration-150 font-manrope"
+                  title={`Undo remove "${lastDeletedSyllabus.file.fileName}"`}
+                >
+                  <Undo2 className="w-3.5 h-3.5" />
+                  <span>Undo</span>
+                </button>
+              )}
+
+              <span className="text-xs font-mono text-muted-foreground">
+                {syllabi.length} files
+              </span>
+            </div>
           </div>
 
           {/* List of Recent Files */}
@@ -645,8 +704,8 @@ export default function HomePage() {
             ))}
 
             {syllabi.length === 0 && (
-              <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-neutral-400 dark:text-neutral-500">
-                <BookOpen className="w-10 h-10 mb-2 stroke-1 text-neutral-300 dark:text-neutral-700" />
+              <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-muted-foreground">
+                <BookOpen className="w-10 h-10 mb-2 stroke-1 text-muted-foreground opacity-60" />
                 <p className="text-sm">No recent files yet</p>
               </div>
             )}
@@ -663,9 +722,9 @@ export default function HomePage() {
 
       {/* Fullscreen loading overlay with shadow layering when opening or pasting syllabus */}
       {isOpeningSyllabus && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 dark:bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-150">
-          <div className="flex flex-col items-center justify-center p-8 bg-white/95 dark:bg-[#1C1C1E]/95 rounded-3xl shadow-2xl border border-black/10 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/10">
-            <Loader2 className="w-12 h-12 animate-spin text-neutral-900 dark:text-neutral-100" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs transition-opacity animate-in fade-in duration-150">
+          <div className="flex flex-col items-center justify-center p-8 bg-card/95 rounded-3xl shadow-2xl border border-border ring-1 ring-border">
+            <Loader2 className="w-12 h-12 animate-spin text-foreground" />
           </div>
         </div>
       )}

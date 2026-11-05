@@ -232,7 +232,7 @@ export const SubsectionsDrawer: React.FC<SubsectionsDrawerProps> = ({
     editorProps: {
       attributes: {
         class:
-          "prose dark:prose-invert max-w-none focus:outline-none min-h-[90px] max-h-[160px] overflow-y-auto text-xs leading-relaxed text-neutral-800 dark:text-neutral-200 px-3 py-2 font-manrope cursor-text",
+          "prose max-w-none focus:outline-none min-h-[90px] max-h-[160px] overflow-y-auto text-xs leading-relaxed text-foreground px-3 py-2 font-manrope cursor-text",
       },
     },
   });
@@ -302,35 +302,35 @@ export const SubsectionsDrawer: React.FC<SubsectionsDrawerProps> = ({
   const getBtnClass = (isActive: boolean, isDisabled: boolean = false) =>
     `p-1.5 rounded transition-colors cursor-pointer ${
       isDisabled
-        ? "text-neutral-300 dark:text-neutral-600 cursor-not-allowed"
+        ? "text-muted-foreground/40 cursor-not-allowed"
         : isActive
-          ? "bg-neutral-200 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 font-semibold"
-          : "text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
+          ? "bg-card text-foreground font-semibold shadow-xs"
+          : "text-foreground-subtle hover:bg-card hover:text-foreground"
     }`;
 
   return (
     <div
       ref={popoverRef}
-      className="fixed bottom-14 right-4 sm:right-6 w-[380px] sm:w-[460px] max-w-[calc(100vw-2rem)] h-[520px] max-h-[75vh] bg-white dark:bg-[#1C1C1E] border border-black/15 dark:border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden z-50 animate-in fade-in slide-in-from-bottom-4 duration-200 font-manrope"
+      className="fixed bottom-14 right-4 sm:right-6 w-[380px] sm:w-[460px] max-w-[calc(100vw-2rem)] h-[520px] max-h-[75vh] bg-card border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden z-50 animate-in fade-in slide-in-from-bottom-4 duration-200 font-manrope"
     >
       {/* Scrollable Subsections Feed */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0 bg-neutral-50/30 dark:bg-[#141416]/30">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0 bg-subtle">
         {subComments.length === 0 && !isAdding && (
-          <div className="h-full flex flex-col items-center justify-center p-6 text-center text-neutral-400 dark:text-neutral-500 select-none">
-            <div className="w-10 h-10 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-2.5 text-neutral-400">
-              <Sparkles className="w-5 h-5 text-blue-500/70" />
+          <div className="h-full flex flex-col items-center justify-center p-6 text-center text-muted-foreground select-none">
+            <div className="w-10 h-10 rounded-full bg-card flex items-center justify-center mb-2.5 text-muted-foreground">
+              <Sparkles className="w-5 h-5 text-accent" />
             </div>
-            <p className="text-xs font-medium text-neutral-700 dark:text-neutral-200 mb-1">
+            <p className="text-xs font-medium text-foreground mb-1">
               No sub-sections yet
             </p>
-            <p className="text-[11px] text-neutral-400 dark:text-neutral-500 max-w-[240px]">
+            <p className="text-[11px] text-muted-foreground max-w-[240px]">
               Add supplementary notes, formulas, checklists, or code snippets
               for this topic.
             </p>
             <button
               type="button"
               onClick={handleOpenAddForm}
-              className="mt-3 inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 font-medium hover:underline cursor-pointer"
+              className="mt-3 inline-flex items-center gap-1 text-xs text-accent font-medium hover:underline cursor-pointer"
             >
               <Plus className="w-3 h-3" />
               <span>Add first sub-section</span>
@@ -346,23 +346,23 @@ export const SubsectionsDrawer: React.FC<SubsectionsDrawerProps> = ({
               onDoubleClick={() => handleStartEdit(comment)}
               className={`p-3 rounded-xl space-y-1.5 text-xs transition-colors group cursor-default ${
                 isCurrentlyEditing
-                  ? "bg-blue-50/40 dark:bg-blue-950/20 border border-blue-500/50 dark:border-blue-400/50 ring-1 ring-blue-500/30 shadow-xs"
-                  : "bg-white dark:bg-[#222225] border border-neutral-200/80 dark:border-neutral-700/80 shadow-2xs hover:border-neutral-300 dark:hover:border-neutral-600"
+                  ? "bg-accent-subtle border border-accent/40 ring-1 ring-accent/30 shadow-xs"
+                  : "bg-card border border-border shadow-2xs hover:border-border"
               }`}
               title="Double-click to edit"
             >
-              <div className="flex items-center justify-between text-[11px] text-neutral-400 dark:text-neutral-500">
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                 {comment.author && comment.author.trim() ? (
-                  <span className="font-semibold text-neutral-800 dark:text-neutral-200 truncate pr-2">
+                  <span className="font-semibold text-foreground truncate pr-2">
                     {comment.author}
                   </span>
                 ) : (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] text-neutral-400 dark:text-neutral-500 font-mono">
+                    <span className="text-[10px] text-muted-foreground font-mono">
                       {comment.timestamp}
                     </span>
                     {isCurrentlyEditing && (
-                      <span className="text-[10px] font-medium text-blue-600 dark:text-blue-400 bg-blue-100/70 dark:bg-blue-900/50 px-1.5 py-0.5 rounded">
+                      <span className="text-[10px] font-medium text-accent bg-accent-subtle px-1.5 py-0.5 rounded">
                         Editing
                       </span>
                     )}
@@ -370,7 +370,7 @@ export const SubsectionsDrawer: React.FC<SubsectionsDrawerProps> = ({
                 )}
                 <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
                   {comment.author && comment.author.trim() && (
-                    <span className="text-[10px] text-neutral-400 mr-1">
+                    <span className="text-[10px] text-muted-foreground mr-1">
                       {comment.timestamp}
                     </span>
                   )}
@@ -380,10 +380,10 @@ export const SubsectionsDrawer: React.FC<SubsectionsDrawerProps> = ({
                       e.stopPropagation();
                       handleStartEdit(comment);
                     }}
-                    className={`transition-opacity cursor-pointer p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 ${
+                    className={`transition-opacity cursor-pointer p-1 rounded hover:bg-subtle ${
                       isCurrentlyEditing
-                        ? "text-blue-600 dark:text-blue-400 opacity-100"
-                        : "opacity-0 group-hover:opacity-100 text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400"
+                        ? "text-accent opacity-100"
+                        : "opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-accent"
                     }`}
                     title="Edit sub-section"
                     aria-label="Edit sub-section"
@@ -396,7 +396,7 @@ export const SubsectionsDrawer: React.FC<SubsectionsDrawerProps> = ({
                       e.stopPropagation();
                       handleDeleteSubComment(comment.id);
                     }}
-                    className="opacity-0 group-hover:opacity-100 text-neutral-400 hover:text-red-500 dark:hover:text-red-400 transition-opacity cursor-pointer p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 transition-opacity cursor-pointer p-1 rounded hover:bg-subtle"
                     title="Delete sub-section"
                     aria-label="Delete sub-section"
                   >
@@ -404,7 +404,7 @@ export const SubsectionsDrawer: React.FC<SubsectionsDrawerProps> = ({
                   </button>
                 </div>
               </div>
-              <div className="text-neutral-800 dark:text-neutral-200 leading-relaxed text-xs">
+              <div className="text-foreground leading-relaxed text-xs">
                 <MarkdownRenderer content={comment.content} />
               </div>
             </div>
@@ -414,10 +414,10 @@ export const SubsectionsDrawer: React.FC<SubsectionsDrawerProps> = ({
 
       {/* Bottom Composer Dock with TipTap Live Markdown Editor & Complete Toolbar */}
       {isAdding ? (
-        <div className="border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#1C1C1E] flex flex-col flex-shrink-0 animate-in slide-in-from-bottom-2 duration-150">
+        <div className="border-t border-border bg-card flex flex-col flex-shrink-0 animate-in slide-in-from-bottom-2 duration-150">
           {/* Complete Rich Formatting Toolbar */}
           {editor && (
-            <div className="px-2.5 py-1.5 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/60 dark:bg-[#1A1A1D]/60 flex items-center gap-0.5 overflow-x-auto no-scrollbar text-xs select-none">
+            <div className="px-2.5 py-1.5 border-b border-border-subtle bg-subtle flex items-center gap-0.5 overflow-x-auto no-scrollbar text-xs select-none">
               {/* Text Style: Paragraph / Headings */}
               <select
                 aria-label="Text style"
@@ -442,7 +442,7 @@ export const SubsectionsDrawer: React.FC<SubsectionsDrawerProps> = ({
                       .run();
                   }
                 }}
-                className="text-[11px] bg-white dark:bg-[#222225] border border-neutral-200 dark:border-neutral-700 rounded px-1.5 py-0.5 text-neutral-700 dark:text-neutral-300 outline-none cursor-pointer font-medium"
+                className="text-[11px] bg-card border border-border rounded px-1.5 py-0.5 text-foreground outline-none cursor-pointer font-medium"
                 title="Text style"
               >
                 <option value="p">Normal text</option>
@@ -451,9 +451,9 @@ export const SubsectionsDrawer: React.FC<SubsectionsDrawerProps> = ({
                 <option value="3">Heading 3</option>
               </select>
 
-              <div className="w-[1px] h-3.5 bg-neutral-200 dark:bg-neutral-700 mx-0.5" />
+              <div className="w-[1px] h-3.5 bg-border mx-0.5" />
 
-              {/* Inline Marks: Bold, Italic, Underline, Strike, Highlight, Code */}
+              {/* Basic Styles */}
               <button
                 type="button"
                 onClick={() => editor.chain().focus().toggleBold().run()}
@@ -490,7 +490,7 @@ export const SubsectionsDrawer: React.FC<SubsectionsDrawerProps> = ({
                 type="button"
                 onClick={() => editor.chain().focus().toggleHighlight().run()}
                 className={getBtnClass(editor.isActive("highlight"))}
-                title="Highlight marker"
+                title="Highlight"
               >
                 <Highlighter className="w-3.5 h-3.5" />
               </button>
@@ -498,19 +498,19 @@ export const SubsectionsDrawer: React.FC<SubsectionsDrawerProps> = ({
                 type="button"
                 onClick={() => editor.chain().focus().toggleCode().run()}
                 className={getBtnClass(editor.isActive("code"))}
-                title="Inline Code (Ctrl+E)"
+                title="Inline Code (`)"
               >
                 <Code className="w-3.5 h-3.5" />
               </button>
 
-              <div className="w-[1px] h-3.5 bg-neutral-200 dark:bg-neutral-700 mx-0.5" />
+              <div className="w-[1px] h-3.5 bg-border mx-0.5" />
 
-              {/* Lists & Structural Elements */}
+              {/* Lists */}
               <button
                 type="button"
                 onClick={() => editor.chain().focus().toggleBulletList().run()}
                 className={getBtnClass(editor.isActive("bulletList"))}
-                title="Bullet list"
+                title="Bullet List (-)"
               >
                 <List className="w-3.5 h-3.5" />
               </button>
@@ -518,7 +518,7 @@ export const SubsectionsDrawer: React.FC<SubsectionsDrawerProps> = ({
                 type="button"
                 onClick={() => editor.chain().focus().toggleOrderedList().run()}
                 className={getBtnClass(editor.isActive("orderedList"))}
-                title="Numbered list"
+                title="Numbered List (1.)"
               >
                 <ListOrdered className="w-3.5 h-3.5" />
               </button>
@@ -526,15 +526,19 @@ export const SubsectionsDrawer: React.FC<SubsectionsDrawerProps> = ({
                 type="button"
                 onClick={() => editor.chain().focus().toggleTaskList().run()}
                 className={getBtnClass(editor.isActive("taskList"))}
-                title="Checklist / Todo"
+                title="Task / Checklist ([ ])"
               >
                 <CheckSquare className="w-3.5 h-3.5" />
               </button>
+
+              <div className="w-[1px] h-3.5 bg-border mx-0.5" />
+
+              {/* Blocks */}
               <button
                 type="button"
                 onClick={() => editor.chain().focus().toggleBlockquote().run()}
                 className={getBtnClass(editor.isActive("blockquote"))}
-                title="Blockquote"
+                title="Quote (>)"
               >
                 <Quote className="w-3.5 h-3.5" />
               </button>
@@ -542,33 +546,43 @@ export const SubsectionsDrawer: React.FC<SubsectionsDrawerProps> = ({
                 type="button"
                 onClick={() => editor.chain().focus().toggleCodeBlock().run()}
                 className={getBtnClass(editor.isActive("codeBlock"))}
-                title="Code block"
+                title="Code Block (```)"
               >
                 <FileCode className="w-3.5 h-3.5" />
               </button>
-
-              <div className="w-[1px] h-3.5 bg-neutral-200 dark:bg-neutral-700 mx-0.5" />
-
-              {/* Text Alignment */}
               <button
                 type="button"
-                onMouseDown={(e) => e.preventDefault()}
+                onClick={() =>
+                  editor.chain().focus().setHorizontalRule().run()
+                }
+                className={getBtnClass(false)}
+                title="Horizontal Divider (---)"
+              >
+                <Minus className="w-3.5 h-3.5" />
+              </button>
+
+              <div className="w-[1px] h-3.5 bg-border mx-0.5" />
+
+              {/* Alignment */}
+              <button
+                type="button"
                 onClick={() =>
                   editor.chain().focus().setTextAlign("left").run()
                 }
-                className={getBtnClass(editor.isActive({ textAlign: "left" }))}
+                className={getBtnClass(
+                  editor.isActive({ textAlign: "left" })
+                )}
                 title="Align Left"
               >
                 <AlignLeft className="w-3.5 h-3.5" />
               </button>
               <button
                 type="button"
-                onMouseDown={(e) => e.preventDefault()}
                 onClick={() =>
                   editor.chain().focus().setTextAlign("center").run()
                 }
                 className={getBtnClass(
-                  editor.isActive({ textAlign: "center" }),
+                  editor.isActive({ textAlign: "center" })
                 )}
                 title="Align Center"
               >
@@ -576,54 +590,42 @@ export const SubsectionsDrawer: React.FC<SubsectionsDrawerProps> = ({
               </button>
               <button
                 type="button"
-                onMouseDown={(e) => e.preventDefault()}
                 onClick={() =>
                   editor.chain().focus().setTextAlign("right").run()
                 }
-                className={getBtnClass(editor.isActive({ textAlign: "right" }))}
+                className={getBtnClass(
+                  editor.isActive({ textAlign: "right" })
+                )}
                 title="Align Right"
               >
                 <AlignRight className="w-3.5 h-3.5" />
               </button>
               <button
                 type="button"
-                onMouseDown={(e) => e.preventDefault()}
                 onClick={() =>
                   editor.chain().focus().setTextAlign("justify").run()
                 }
                 className={getBtnClass(
-                  editor.isActive({ textAlign: "justify" }),
+                  editor.isActive({ textAlign: "justify" })
                 )}
-                title="Align Justify"
+                title="Justify"
               >
                 <AlignJustify className="w-3.5 h-3.5" />
               </button>
 
-              <div className="w-[1px] h-3.5 bg-neutral-200 dark:bg-neutral-700 mx-0.5" />
+              <div className="w-[1px] h-3.5 bg-border mx-0.5" />
 
-              {/* Dividers & Clear Formatting */}
-              <button
-                type="button"
-                onClick={() => editor.chain().focus().setHorizontalRule().run()}
-                className={getBtnClass(false)}
-                title="Horizontal Divider"
-              >
-                <Minus className="w-3.5 h-3.5" />
-              </button>
+              {/* Undo / Redo / Clear */}
               <button
                 type="button"
                 onClick={() =>
-                  editor.chain().focus().unsetAllMarks().clearNodes().run()
+                  editor.chain().focus().clearNodes().unsetAllMarks().run()
                 }
                 className={getBtnClass(false)}
-                title="Clear formatting"
+                title="Clear Formatting"
               >
                 <RemoveFormatting className="w-3.5 h-3.5" />
               </button>
-
-              <div className="w-[1px] h-3.5 bg-neutral-200 dark:bg-neutral-700 mx-0.5" />
-
-              {/* Undo / Redo */}
               <button
                 type="button"
                 onClick={() => editor.chain().focus().undo().run()}
@@ -645,7 +647,7 @@ export const SubsectionsDrawer: React.FC<SubsectionsDrawerProps> = ({
             </div>
           )}
 
-          {/* Live TipTap Markdown Canvas */}
+          {/* Editable Editor Area */}
           <div
             className="p-1 cursor-text"
             onClick={() => {
@@ -658,8 +660,8 @@ export const SubsectionsDrawer: React.FC<SubsectionsDrawerProps> = ({
           </div>
 
           {/* Action Row */}
-          <div className="px-3 py-2 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between bg-neutral-50/50 dark:bg-[#1C1C1E]">
-            <div className="flex items-center gap-1.5 text-[10px] text-neutral-400 dark:text-neutral-500 font-mono">
+          <div className="px-3 py-2 border-t border-border-subtle flex items-center justify-between bg-subtle">
+            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-mono">
               <span>
                 Press Ctrl+Enter to {editingCommentId ? "save" : "add"}
               </span>
@@ -669,14 +671,14 @@ export const SubsectionsDrawer: React.FC<SubsectionsDrawerProps> = ({
               <button
                 type="button"
                 onClick={handleCloseAddForm}
-                className="px-2.5 py-1 rounded text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-xs cursor-pointer transition-colors"
+                className="px-2.5 py-1 rounded text-muted-foreground hover:bg-card text-xs cursor-pointer transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleSaveSubComment}
-                className="px-3 py-1 bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 rounded-lg text-xs font-medium hover:bg-neutral-800 dark:hover:bg-neutral-200 cursor-pointer shadow-2xs transition-colors"
+                className="px-3 py-1 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary-hover cursor-pointer shadow-2xs transition-colors"
               >
                 {editingCommentId ? "Save" : "Add"}
               </button>
@@ -684,11 +686,11 @@ export const SubsectionsDrawer: React.FC<SubsectionsDrawerProps> = ({
           </div>
         </div>
       ) : (
-        <div className="p-2.5 border-t border-neutral-100 dark:border-neutral-800 bg-white dark:bg-[#1C1C1E] flex items-center justify-between flex-shrink-0">
+        <div className="p-2.5 border-t border-border-subtle bg-card flex items-center justify-between flex-shrink-0">
           <button
             type="button"
             onClick={handleOpenAddForm}
-            className="flex-1 flex items-center justify-between px-3 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700/80 bg-neutral-50 dark:bg-[#242428] text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600 text-xs transition-colors cursor-pointer"
+            className="flex-1 flex items-center justify-between px-3 py-1.5 rounded-lg border border-border bg-subtle text-muted-foreground hover:text-foreground hover:border-border text-xs transition-colors cursor-pointer"
           >
             <span>Add a sub-section...</span>
             <Plus className="w-3.5 h-3.5" />

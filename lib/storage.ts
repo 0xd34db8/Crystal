@@ -237,3 +237,23 @@ export function deleteSyllabus(id: string): SyllabusData[] {
   return list;
 }
 
+export function restoreSyllabus(
+  syllabus: SyllabusData,
+  atIndex?: number,
+): SyllabusData[] {
+  if (typeof window === "undefined") return [];
+  const list = getSavedSyllabi();
+  const existingIdx = list.findIndex((s) => s.id === syllabus.id);
+  if (existingIdx >= 0) return list;
+
+  const updatedList = [...list];
+  const targetIndex =
+    typeof atIndex === "number"
+      ? Math.min(Math.max(0, atIndex), updatedList.length)
+      : 0;
+  updatedList.splice(targetIndex, 0, syllabus);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedList));
+  return updatedList;
+}
+
+
