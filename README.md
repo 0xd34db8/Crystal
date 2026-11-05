@@ -18,6 +18,7 @@
 
 <p align="center">
   <a href="#overview">Overview</a> •
+  <a href="#core-workflow-philosophy">Core Workflow</a> •
   <a href="#quick-start">Quick Start</a> •
   <a href="#key-features">Key Features</a> •
   <a href="#progress-tracking">Progress Tracking</a> •
@@ -43,6 +44,7 @@
 Academic curricula and course outlines are often distributed as unstructured PDF documents, Word tables, or dense syllabi. Extracting structured study paths and keeping organized, topic-specific notes across large modules is cumbersome with standard word processors.
 
 Crystal organizes curriculum documents into interactive, hierarchical study workspaces:
+
 - Dedicated study note workspace for each syllabus topic.
 - TipTap-powered editor with bidirectional Markdown support:
   - Headings, bold, italic, underline, strikethrough, and text highlighting.
@@ -53,6 +55,37 @@ Crystal organizes curriculum documents into interactive, hierarchical study work
 - Dual-mode syllabus tree with interactive visual hierarchy and live JSON tree editing with syntax highlighting.
 - Non-destructive tree undo and redo that preserves topic note content across structural changes.
 - Universal LLM integration for AI study note generation and prompt export for external web models.
+
+---
+
+## Core Workflow & Philosophy
+
+The foundational design of Crystal centers on a unified study workflow: **bringing the syllabus outline and note-taking into one cohesive workspace for organized, concise, at-a-glance information intake and retrieval**.
+
+### The Fragmentation Problem
+
+In traditional learning environments, the course outline and study notes live in completely separate domains:
+
+- The **syllabus** exists as a static PDF, printout, or LMS web page.
+- The **notes** end up scattered across notebook pages, disconnected Google Docs, Notion pages, or nested folder directories.
+
+This separation introduces continuous friction: learners lose context on which syllabus requirements have actually been covered, struggle to locate concise summaries for specific exam topics, and end up with monolithic, hundred-page documents where finding individual concepts requires constant search queries and scrolling.
+
+### The Solution
+
+Crystal eliminates this boundary by merging curriculum structure and topic notes into a single interface:
+
+1. **Unified Navigation & Scoped Workspace**:
+   The syllabus tree functions as both the curriculum outline and the navigation index. Selecting any topic in the tree immediately opens its dedicated note pane side by side, ensuring notes are always anchored to their curriculum context.
+
+2. **At-a-Glance Intake & Retrieval**:
+   Learners can assess their entire course standing in seconds. Dedicated note indicators show exactly which topics have attached study summaries, while color-coded completion chips (Done, Partially, Barely, Untouched) provide instant visibility into course mastery without opening individual documents.
+
+3. **Contextual Knowledge Chunking**:
+   Rather than allowing notes to accumulate into unstructured, monolithic files, Crystal encourages concise, topic-scoped documentation. Secondary details, problem sets, and derivations live in the topic's floating sub-sections drawer, keeping primary notes clean and high-yield.
+
+4. **Single Portable Workspace**:
+   The entire curriculum structure, progress metrics, topic notes, and supplementary comments persist together in a single `.crystal` file, providing a complete, self-contained study record that can be loaded or backed up at any time.
 
 ---
 
