@@ -59,6 +59,9 @@ import {
   MessageSquare,
   Copy,
   Check,
+  Maximize2,
+  Minimize2,
+  ImageIcon,
 } from "lucide-react";
 
 // Markdown serialization extensions to cleanly bridge TipTap nodes to standard markdown strings
@@ -198,6 +201,7 @@ interface NoteEditorProps {
   parentTitle?: string;
   onRenameTopic?: (topicId: string, newTitle: string) => void;
   onBackToTree?: () => void;
+  isActive?: boolean;
 }
 
 export const NoteEditor: React.FC<NoteEditorProps> = ({
@@ -209,6 +213,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   parentTitle,
   onRenameTopic,
   onBackToTree,
+  isActive = false,
 }) => {
   const [content, setContent] = useState<string>("");
   const [subComments, setSubComments] = useState<NoteComment[]>([]);
@@ -225,6 +230,29 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
 
   // Notion-style Image URL Embed Pill
   const [pendingEmbedUrl, setPendingEmbedUrl] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+
+  // Fullscreen toggle & Escape key listener
+  const toggleFullscreen = () => {
+    setIsFullscreen((prev) => !prev);
+  };
+
+  const handleClose = () => {
+    setIsFullscreen(false);
+    onClose();
+  };
+
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setIsFullscreen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isFullscreen]);
 
   // AI Generation State
   const [isAiGenerating, setIsAiGenerating] = useState<boolean>(false);
@@ -384,6 +412,47 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
     },
   });
 
+  // Handle editor-scoped Undo/Redo shortcuts when this panel is active/highlighted
+  useEffect(() => {
+    if (!isActive || !editor) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isUndo =
+        (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey;
+      const isRedo =
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") ||
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && e.shiftKey);
+
+      if (!isUndo && !isRedo) return;
+
+      const target = e.target as HTMLElement | null;
+      // If typing in another normal input/textarea inside the editor (like comment inputs), let native input undo handle it
+      if (
+        target &&
+        (target.tagName === "INPUT" || target.tagName === "TEXTAREA")
+      ) {
+        return;
+      }
+
+      // If TipTap editor is already focused, TipTap's own ProseMirror keydown listener will handle it natively
+      if (editor.isFocused) {
+        return;
+      }
+
+      // Otherwise (user clicked editor pane toolbar, comments, or outer card), route to TipTap history
+      e.preventDefault();
+      e.stopPropagation();
+      if (isUndo && editor.can().undo()) {
+        editor.chain().focus().undo().run();
+      } else if (isRedo && editor.can().redo()) {
+        editor.chain().focus().redo().run();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isActive, editor]);
+
   // Sync state and editor content when selected topic changes
   useEffect(() => {
     if (selectedTopic) {
@@ -408,6 +477,13 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
     setAiError(null);
     setPendingEmbedUrl(null);
   }, [selectedTopic?.id, selectedTopic?.note?.updatedAt, editor]);
+
+  // Keep titleValue in sync if topic title changes externally (e.g. tree undo/redo or tree rename)
+  useEffect(() => {
+    if (selectedTopic && !isEditingTitle) {
+      setTitleValue(selectedTopic.title);
+    }
+  }, [selectedTopic?.title, isEditingTitle]);
 
   // Handle topic inline renaming
   const handleSaveTitle = () => {
@@ -769,7 +845,14 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
     }`;
 
   return (
-    <div className="h-full flex flex-col overflow-hidden font-manrope">
+    <div
+      data-editor-pane="true"
+      className={`flex flex-col font-manrope transition-all duration-200 ${
+        isFullscreen
+          ? "fixed inset-0 z-50 bg-white dark:bg-[#1C1C1E] h-screen w-screen overflow-hidden"
+          : "h-full overflow-hidden"
+      }`}
+    >
       {/* Top Header: Centered Clickable / Inline Editable Topic Title */}
       <div className="relative pt-4 sm:pt-5 pb-3 sm:pb-4 px-3 sm:px-6 md:px-8 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between gap-2">
         {/* Left: Mobile Back Button + Status Selector Pill */}
@@ -884,9 +967,24 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             </button>
           </div>
 
+          {/* Fullscreen Toggle Button */}
           <button
             type="button"
-            onClick={onClose}
+            onClick={toggleFullscreen}
+            className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors cursor-pointer"
+            title={isFullscreen ? "Exit Fullscreen (Esc)" : "Fullscreen"}
+            aria-label={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+          >
+            {isFullscreen ? (
+              <Minimize2 className="w-4 h-4" />
+            ) : (
+              <Maximize2 className="w-4 h-4" />
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleClose}
             className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors cursor-pointer"
             title="Close Note"
           >
@@ -1116,7 +1214,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       {pendingEmbedUrl && (
         <div className="mx-3 sm:mx-6 md:mx-8 my-2 p-2 sm:p-2.5 rounded-xl bg-blue-50/90 dark:bg-blue-950/70 border border-blue-200 dark:border-blue-800 flex items-center justify-between text-xs animate-in fade-in slide-in-from-top-1">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="text-base select-none">🖼️</span>
+            <ImageIcon className="w-4 h-4 text-blue-500 flex-shrink-0" />
             <span className="text-neutral-600 dark:text-neutral-400 truncate max-w-[200px] sm:max-w-[280px]">
               Image URL:{" "}
               <span className="font-mono text-neutral-900 dark:text-neutral-200">
@@ -1168,52 +1266,61 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           }
         }}
       >
-        <EditorContent editor={editor} />
+        <div className={isFullscreen ? "max-w-4xl mx-auto w-full" : "w-full"}>
+          <EditorContent editor={editor} />
+        </div>
       </div>
 
       {/* Sub-sections Bottom Dock Panel with Eye Toggle */}
       <div className="border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50/70 dark:bg-[#18181A] transition-all flex flex-col flex-shrink-0">
         {/* Panel Header Bar */}
         <div className="flex items-center justify-between px-4 sm:px-6 md:px-8 py-2 sm:py-2.5">
-          <div className="flex items-center gap-3">
-            {!isAddingReply && (
-              <button
-                type="button"
-                onClick={() => {
-                  setIsAddingReply(true);
-                  setShowSubSections(true);
-                }}
-                className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add Sub-section</span>
-              </button>
-            )}
-          </div>
-
-          {/* Eye Icon to Hide / Show Sub-sections */}
-          <button
-            type="button"
-            onClick={() => setShowSubSections(!showSubSections)}
-            className="p-1.5 rounded-lg hover:bg-neutral-200/60 dark:hover:bg-neutral-800 text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200 transition-colors cursor-pointer"
-            title={showSubSections ? "Hide sub-sections" : "Show sub-sections"}
-            aria-label={
-              showSubSections ? "Hide sub-sections" : "Show sub-sections"
-            }
+          <div
+            className={`w-full flex items-center justify-between ${
+              isFullscreen ? "max-w-4xl mx-auto" : ""
+            }`}
           >
-            {showSubSections ? (
-              <Eye className="w-4 h-4" />
-            ) : (
-              <EyeOff className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
-            )}
-          </button>
+            <div className="flex items-center gap-3">
+              {!isAddingReply && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAddingReply(true);
+                    setShowSubSections(true);
+                  }}
+                  className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Sub-section</span>
+                </button>
+              )}
+            </div>
+
+            {/* Eye Icon to Hide / Show Sub-sections */}
+            <button
+              type="button"
+              onClick={() => setShowSubSections(!showSubSections)}
+              className="p-1.5 rounded-lg hover:bg-neutral-200/60 dark:hover:bg-neutral-800 text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200 transition-colors cursor-pointer"
+              title={showSubSections ? "Hide sub-sections" : "Show sub-sections"}
+              aria-label={
+                showSubSections ? "Hide sub-sections" : "Show sub-sections"
+              }
+            >
+              {showSubSections ? (
+                <Eye className="w-4 h-4" />
+              ) : (
+                <EyeOff className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Expandable sub-sections body */}
         {showSubSections && (
           <div className="px-4 sm:px-6 md:px-8 pb-3 sm:pb-4 pt-1 max-h-56 overflow-y-auto space-y-3">
-            {/* Sub-comment Cards */}
-            <div className="space-y-2.5">
+            <div className={isFullscreen ? "max-w-4xl mx-auto w-full space-y-3" : "space-y-3"}>
+              {/* Sub-comment Cards */}
+              <div className="space-y-2.5">
               {subComments.map((comment) => (
                 <div
                   key={comment.id}
@@ -1295,6 +1402,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                 </div>
               </div>
             )}
+            </div>
           </div>
         )}
       </div>

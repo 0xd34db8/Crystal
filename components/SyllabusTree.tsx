@@ -14,6 +14,8 @@ import {
   Pencil,
   Braces,
   ListTree,
+  Undo2,
+  Redo2,
 } from "lucide-react";
 import {
   serializeSyllabusToJson,
@@ -35,6 +37,10 @@ interface SyllabusTreeProps {
   onUpdateTitle?: (title: string) => void;
   courseTitle?: string;
   searchQuery?: string;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
 }
 
 export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
@@ -51,6 +57,10 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
   onUpdateTitle,
   courseTitle,
   searchQuery = "",
+  canUndo = false,
+  canRedo = false,
+  onUndo,
+  onRedo,
 }) => {
   const [isJsonMode, setIsJsonMode] = useState(false);
   const [jsonText, setJsonText] = useState("");
@@ -590,8 +600,32 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
       ) : (
         <div className="h-full flex flex-col p-4 overflow-y-auto select-none font-manrope">
           <div className="flex-1 space-y-1 pb-10">
-            {/* Top row with JSON toggle icon on the right (scrolls away with tree content) */}
-            <div className="flex justify-end items-center -mt-1 -mr-1 mb-1">
+            {/* Top row with Undo, Redo, and JSON toggle buttons on the right */}
+            <div className="flex justify-end items-center gap-1 -mt-1 -mr-1 mb-1">
+              {onUndo && (
+                <button
+                  type="button"
+                  onClick={onUndo}
+                  disabled={!canUndo}
+                  className="p-1 rounded-md text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-25 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  title="Undo tree change (Ctrl+Z)"
+                  aria-label="Undo tree change"
+                >
+                  <Undo2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {onRedo && (
+                <button
+                  type="button"
+                  onClick={onRedo}
+                  disabled={!canRedo}
+                  className="p-1 rounded-md text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-25 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  title="Redo tree change (Ctrl+Y)"
+                  aria-label="Redo tree change"
+                >
+                  <Redo2 className="w-3.5 h-3.5" />
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleToggleJsonMode}

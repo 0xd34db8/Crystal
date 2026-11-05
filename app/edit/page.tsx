@@ -36,6 +36,157 @@ export default function EditPage() {
   const [apiKey, setApiKey] = useState<string>("");
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState<boolean>(false);
   const [mobileTab, setMobileTab] = useState<"tree" | "editor">("tree");
+  const [activePanel, setActivePanel] = useState<"tree" | "editor">("tree");
+
+  // Structural tree snapshot (preserves latest notes across tree undo/redo)
+  interface TreeSnapshotNode {
+    id: string;
+    title: string;
+    status: TopicStatus;
+    isExpanded?: boolean;
+    hasNote?: boolean;
+    note?: TopicNote;
+    children?: TreeSnapshotNode[];
+  }
+
+  const [historyPast, setHistoryPast] = useState<TreeSnapshotNode[][]>([]);
+  const [historyFuture, setHistoryFuture] = useState<TreeSnapshotNode[][]>([]);
+
+  const extractTreeSnapshot = (items: SyllabusItem[]): TreeSnapshotNode[] => {
+    return items.map((it) => ({
+      id: it.id,
+      title: it.title,
+      status: it.status,
+      isExpanded: it.isExpanded,
+      hasNote: it.hasNote,
+      note: it.note,
+      children: it.children ? extractTreeSnapshot(it.children) : undefined,
+    }));
+  };
+
+  const restoreTreeFromSnapshot = (
+    snapshot: TreeSnapshotNode[],
+    currentItems: SyllabusItem[],
+  ): SyllabusItem[] => {
+    // Preserve all existing notes currently in the syllabus
+    const notesMap = new Map<string, { note?: TopicNote; hasNote: boolean }>();
+    function collect(items: SyllabusItem[]) {
+      for (const it of items) {
+        if (it.note || it.hasNote) {
+          notesMap.set(it.id, { note: it.note, hasNote: it.hasNote });
+        }
+        if (it.children) collect(it.children);
+      }
+    }
+    collect(currentItems);
+
+    function apply(nodes: TreeSnapshotNode[]): SyllabusItem[] {
+      return nodes.map((n) => {
+        // If the topic currently exists in currentItems, keep its current latest note.
+        // This guarantees tree undo/redo never reverts or resets note editor edits.
+        // If the topic was deleted and is being restored by undo, use the saved note from snapshot.
+        const currentSaved = notesMap.get(n.id);
+        const hasNote = currentSaved !== undefined ? currentSaved.hasNote : Boolean(n.hasNote);
+        const note = currentSaved !== undefined ? currentSaved.note : n.note;
+
+        return {
+          id: n.id,
+          title: n.title,
+          status: n.status,
+          isExpanded: n.isExpanded ?? true,
+          hasNote,
+          note,
+          children: n.children ? apply(n.children) : undefined,
+        };
+      });
+    }
+
+    return apply(snapshot);
+  };
+
+  const pushTreeHistory = (currentItems: SyllabusItem[]) => {
+    const snapshot = extractTreeSnapshot(currentItems);
+    setHistoryPast((prev) => [snapshot, ...prev.slice(0, 49)]);
+    setHistoryFuture([]);
+  };
+
+  const handleTreeUndo = () => {
+    if (historyPast.length === 0) return;
+    const [prevSnapshot, ...remainingPast] = historyPast;
+    const currentSnapshot = extractTreeSnapshot(syllabus.items);
+    setHistoryFuture((prev) => [currentSnapshot, ...prev]);
+    setHistoryPast(remainingPast);
+
+    const restoredItems = restoreTreeFromSnapshot(prevSnapshot, syllabus.items);
+    setSyllabus((prev) => {
+      const updated = { ...prev, isDraft: false, items: restoredItems };
+      saveSyllabus(updated);
+      return updated;
+    });
+  };
+
+  const handleTreeRedo = () => {
+    if (historyFuture.length === 0) return;
+    const [nextSnapshot, ...remainingFuture] = historyFuture;
+    const currentSnapshot = extractTreeSnapshot(syllabus.items);
+    setHistoryPast((prev) => [currentSnapshot, ...prev]);
+    setHistoryFuture(remainingFuture);
+
+    const restoredItems = restoreTreeFromSnapshot(nextSnapshot, syllabus.items);
+    setSyllabus((prev) => {
+      const updated = { ...prev, isDraft: false, items: restoredItems };
+      saveSyllabus(updated);
+      return updated;
+    });
+  };
+
+  // Keyboard shortcut listener: strictly respects whichever panel is clicked/active
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isUndo =
+        (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey;
+      const isRedo =
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") ||
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && e.shiftKey);
+
+      if (!isUndo && !isRedo) return;
+
+      const target = e.target as HTMLElement | null;
+      const isInsideEditor = Boolean(
+        target &&
+          (target.closest("[data-editor-pane]") ||
+            target.isContentEditable ||
+            target.tagName === "TEXTAREA" ||
+            (target.tagName === "INPUT" && !target.closest("[data-tree-pane]"))),
+      );
+
+      // If clicked/focused on editor, DO NOT TOUCH TREE! Let editor handle its own undo/redo natively.
+      if (activePanel === "editor" || isInsideEditor) {
+        return;
+      }
+
+      // If typing inside an input/textarea in the tree, let native input undo handle it
+      if (
+        target &&
+        (target.tagName === "INPUT" || target.tagName === "TEXTAREA") &&
+        target.closest("[data-tree-pane]")
+      ) {
+        return;
+      }
+
+      // If clicked/focused on tree, perform tree undo/redo
+      e.preventDefault();
+      e.stopPropagation();
+      if (isUndo) {
+        handleTreeUndo();
+      } else {
+        handleTreeRedo();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
+  }, [historyPast, historyFuture, activePanel, syllabus.items]);
 
   // Load active syllabus and api key on client
   useEffect(() => {
@@ -92,6 +243,7 @@ export default function EditPage() {
   // Update item progress status (done, partial, barely, untouched)
   const handleUpdateStatus = (itemId: string, status: TopicStatus) => {
     setSyllabus((prev) => {
+      pushTreeHistory(prev.items);
       const updated = {
         ...prev,
         isDraft: false,
@@ -125,6 +277,7 @@ export default function EditPage() {
   // Toggle note existence
   const handleToggleNote = (itemId: string) => {
     setSyllabus((prev) => {
+      pushTreeHistory(prev.items);
       const updated = {
         ...prev,
         isDraft: false,
@@ -162,6 +315,7 @@ export default function EditPage() {
 
   const handleDeleteTopic = (itemId: string) => {
     setSyllabus((prev) => {
+      pushTreeHistory(prev.items);
       const updated = {
         ...prev,
         isDraft: false,
@@ -183,6 +337,7 @@ export default function EditPage() {
       hasNote: false,
     };
     setSyllabus((prev) => {
+      pushTreeHistory(prev.items);
       const updated = {
         ...prev,
         isDraft: false,
@@ -197,6 +352,7 @@ export default function EditPage() {
     const trimmed = newTitle.trim();
     if (!trimmed) return;
     setSyllabus((prev) => {
+      pushTreeHistory(prev.items);
       const updated = {
         ...prev,
         isDraft: false,
@@ -217,6 +373,7 @@ export default function EditPage() {
 
   const handleUpdateItems = (newItems: SyllabusItem[]) => {
     setSyllabus((prev) => {
+      pushTreeHistory(prev.items);
       const updated = {
         ...prev,
         isDraft: false,
@@ -244,7 +401,14 @@ export default function EditPage() {
       <div className="flex-1 flex gap-3 md:gap-5 px-3 sm:px-4 md:px-6 py-2 md:py-3 overflow-hidden min-h-0">
         {/* Left Pane: Syllabus Tree Card */}
         <div
-          className={`w-full md:w-80 lg:w-96 xl:w-[380px] flex-shrink-0 bg-white dark:bg-[#1C1C1E] rounded-2xl md:rounded-[26px] border border-black/15 dark:border-white/10 shadow-xs flex flex-col overflow-hidden ${
+          data-tree-pane="true"
+          onClickCapture={() => setActivePanel("tree")}
+          onFocusCapture={() => setActivePanel("tree")}
+          className={`w-full md:w-80 lg:w-96 xl:w-[380px] flex-shrink-0 bg-white dark:bg-[#1C1C1E] rounded-2xl md:rounded-[26px] border transition-all duration-200 shadow-xs flex flex-col overflow-hidden ${
+            activePanel === "tree"
+              ? "border-black/30 dark:border-white/25 shadow-sm"
+              : "border-black/10 dark:border-white/10"
+          } ${
             mobileTab === "tree" ? "flex" : "hidden md:flex"
           }`}
         >
@@ -265,12 +429,23 @@ export default function EditPage() {
             onToggleNote={handleToggleNote}
             onUpdateItems={handleUpdateItems}
             searchQuery={searchQuery}
+            canUndo={historyPast.length > 0}
+            canRedo={historyFuture.length > 0}
+            onUndo={handleTreeUndo}
+            onRedo={handleTreeRedo}
           />
         </div>
 
         {/* Right Pane: Main Note Editor Card */}
         <div
-          className={`flex-1 bg-white dark:bg-[#1C1C1E] rounded-2xl md:rounded-[26px] border border-black/15 dark:border-white/10 shadow-xs flex flex-col overflow-hidden ${
+          data-editor-pane="true"
+          onClickCapture={() => setActivePanel("editor")}
+          onFocusCapture={() => setActivePanel("editor")}
+          className={`flex-1 bg-white dark:bg-[#1C1C1E] rounded-2xl md:rounded-[26px] border transition-all duration-200 shadow-xs flex flex-col overflow-hidden ${
+            activePanel === "editor"
+              ? "border-black/30 dark:border-white/25 shadow-sm"
+              : "border-black/10 dark:border-white/10"
+          } ${
             mobileTab === "editor" ? "flex" : "hidden md:flex"
           }`}
         >
@@ -286,6 +461,7 @@ export default function EditPage() {
             parentTitle={parentTopic?.title}
             onRenameTopic={handleRenameTopic}
             onBackToTree={() => setMobileTab("tree")}
+            isActive={activePanel === "editor"}
           />
         </div>
       </div>
@@ -298,7 +474,10 @@ export default function EditPage() {
         <div className="flex md:hidden items-center p-0.5 bg-neutral-200/90 dark:bg-neutral-800 rounded-full text-xs font-medium shadow-xs">
           <button
             type="button"
-            onClick={() => setMobileTab("tree")}
+            onClick={() => {
+              setMobileTab("tree");
+              setActivePanel("tree");
+            }}
             className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
               mobileTab === "tree"
                 ? "bg-white dark:bg-[#1C1C1E] text-neutral-900 dark:text-neutral-100 shadow-2xs font-semibold"
@@ -309,7 +488,10 @@ export default function EditPage() {
           </button>
           <button
             type="button"
-            onClick={() => setMobileTab("editor")}
+            onClick={() => {
+              setMobileTab("editor");
+              setActivePanel("editor");
+            }}
             className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
               mobileTab === "editor"
                 ? "bg-white dark:bg-[#1C1C1E] text-neutral-900 dark:text-neutral-100 shadow-2xs font-semibold"
