@@ -120,14 +120,39 @@ export function getSavedSyllabi(includeDrafts: boolean = false): SyllabusData[] 
     const cleaned = parsed.filter(
       (s) => s.id !== "syllabus-ml-101" && s.id !== "syllabus-cloud-arch",
     );
-    if (cleaned.length !== parsed.length) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
+
+    // Deduplicate any exact duplicate syllabus entries (e.g. from rapid multi-paste triggers)
+    const seen = new Set<string>();
+    const deduplicated: SyllabusData[] = [];
+    for (const s of cleaned) {
+      const firstTopic = s.items?.[0]?.title || "";
+      const fingerprint = `${s.items?.length || 0}::${firstTopic}`;
+      if (!seen.has(fingerprint)) {
+        seen.add(fingerprint);
+        // Automatically fix "Imported Syllabus" if a real topic title is available
+        if (
+          (s.fileName === "Imported Syllabus" || !s.fileName) &&
+          s.items &&
+          s.items.length > 0 &&
+          firstTopic
+        ) {
+          const recovered = firstTopic
+            .replace(/^(?:unit|module|chapter|co)\s*[\divx]+[:\-–]\s*/i, "")
+            .trim();
+          s.fileName = recovered || firstTopic;
+        }
+        deduplicated.push(s);
+      }
+    }
+
+    if (deduplicated.length !== parsed.length) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(deduplicated));
     }
     if (includeDrafts) {
-      return cleaned;
+      return deduplicated;
     }
     // Return only actual syllabi with user content/modifications, omitting untouched blank drafts
-    return cleaned.filter(
+    return deduplicated.filter(
       (s) =>
         !s.isDraft &&
         !(
@@ -164,12 +189,22 @@ export function cleanupUnusedDrafts(): void {
 export function saveSyllabus(syllabus: SyllabusData) {
   if (typeof window === "undefined") return;
   const list = getSavedSyllabi(true);
-  const existingIdx = list.findIndex((s) => s.id === syllabus.id);
+
+  const firstTopic = syllabus.items?.[0]?.title || "";
+  const existingIdx = list.findIndex(
+    (s) =>
+      s.id === syllabus.id ||
+      (firstTopic &&
+        s.items?.[0]?.title === firstTopic &&
+        s.items?.length === syllabus.items?.length),
+  );
+
   let updatedList: SyllabusData[];
   if (existingIdx >= 0) {
     updatedList = [...list];
     updatedList[existingIdx] = {
       ...syllabus,
+      id: list[existingIdx].id,
       lastModified: "Just now",
     };
   } else {

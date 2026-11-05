@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { SyllabusItem, TopicStatus } from "@/types/syllabus";
 import { NoteIcon } from "./NoteIcon";
 import {
@@ -14,8 +14,12 @@ import {
   Pencil,
   Braces,
   ListTree,
-  AlertCircle,
 } from "lucide-react";
+import {
+  serializeSyllabusToJson,
+  highlightJson,
+  tolerantParseSyllabus,
+} from "@/lib/parser";
 
 interface SyllabusTreeProps {
   items: SyllabusItem[];
@@ -28,6 +32,8 @@ interface SyllabusTreeProps {
   onRenameTopic?: (itemId: string, newTitle: string) => void;
   onToggleNote?: (itemId: string) => void;
   onUpdateItems?: (items: SyllabusItem[]) => void;
+  onUpdateTitle?: (title: string) => void;
+  courseTitle?: string;
   searchQuery?: string;
 }
 
@@ -42,11 +48,15 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
   onRenameTopic,
   onToggleNote,
   onUpdateItems,
+  onUpdateTitle,
+  courseTitle,
   searchQuery = "",
 }) => {
   const [isJsonMode, setIsJsonMode] = useState(false);
   const [jsonText, setJsonText] = useState("");
-  const [jsonError, setJsonError] = useState<string | null>(null);
+  const [isValidJson, setIsValidJson] = useState(true);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const preRef = useRef<HTMLPreElement>(null);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [addingSubtopicToId, setAddingSubtopicToId] = useState<string | null>(
     null,
@@ -412,54 +422,67 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
     );
   };
 
-  const handleOpenJsonMode = () => {
-    setJsonText(JSON.stringify(items, null, 2));
-    setJsonError(null);
-    setIsJsonMode(true);
+  const handleToggleJsonMode = () => {
+    if (!isJsonMode) {
+      const formatted = serializeSyllabusToJson(items, courseTitle);
+      setJsonText(formatted);
+      setIsValidJson(true);
+      setIsJsonMode(true);
+    } else {
+      const res = tolerantParseSyllabus(jsonText, items);
+      if (res.items && res.items.length > 0) {
+        onUpdateItems?.(res.items);
+      }
+      if (res.courseTitle && onUpdateTitle) {
+        onUpdateTitle(res.courseTitle.trim());
+      }
+      setIsJsonMode(false);
+    }
   };
 
-  const handleCloseJsonMode = () => {
-    try {
-      const parsed = JSON.parse(jsonText);
-      let nextItems: SyllabusItem[];
-      if (Array.isArray(parsed)) {
-        nextItems = parsed;
-      } else if (parsed && Array.isArray(parsed.items)) {
-        nextItems = parsed.items;
-      } else {
-        throw new Error(
-          "JSON must be an array of syllabus topics or { items: [...] }",
-        );
+  const handleJsonChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newText = e.target.value;
+    setJsonText(newText);
+    const res = tolerantParseSyllabus(newText, items);
+    setIsValidJson(res.isValid);
+    if (res.items && res.items.length > 0) {
+      onUpdateItems?.(res.items);
+    }
+    if (res.courseTitle && onUpdateTitle) {
+      onUpdateTitle(res.courseTitle.trim());
+    }
+  };
+
+  const handleJsonScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
+    if (preRef.current) {
+      preRef.current.scrollTop = e.currentTarget.scrollTop;
+      preRef.current.scrollLeft = e.currentTarget.scrollLeft;
+    }
+  };
+
+  const handleFormatJson = () => {
+    const res = tolerantParseSyllabus(jsonText, items);
+    if (res.items && res.items.length > 0) {
+      const formatted = serializeSyllabusToJson(
+        res.items,
+        res.courseTitle || courseTitle,
+      );
+      setJsonText(formatted);
+      setIsValidJson(true);
+      onUpdateItems?.(res.items);
+      if (res.courseTitle && onUpdateTitle) {
+        onUpdateTitle(res.courseTitle.trim());
       }
-
-      const sanitizeItems = (list: any[]): SyllabusItem[] => {
-        return list.map((item, i) => ({
-          id: item.id || `topic-${Date.now()}-${i}`,
-          title: item.title || "Untitled Topic",
-          status: item.status || "untouched",
-          isExpanded: item.isExpanded ?? true,
-          hasNote: Boolean(item.hasNote || item.note),
-          note: item.note,
-          children:
-            item.children && Array.isArray(item.children)
-              ? sanitizeItems(item.children)
-              : undefined,
-        }));
-      };
-
-      const sanitized = sanitizeItems(nextItems);
-      onUpdateItems?.(sanitized);
-      setIsJsonMode(false);
-      setJsonError(null);
-    } catch (err: any) {
-      setJsonError(err.message || "Invalid JSON syntax");
     }
   };
 
   const handleJsonKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
       e.preventDefault();
-      handleCloseJsonMode();
+      handleToggleJsonMode();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      handleToggleJsonMode();
     } else if (e.key === "Tab") {
       e.preventDefault();
       const textarea = e.currentTarget;
@@ -468,9 +491,41 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
       const value = textarea.value;
       const newValue = value.substring(0, start) + "  " + value.substring(end);
       setJsonText(newValue);
+      const res = tolerantParseSyllabus(newValue, items);
+      setIsValidJson(res.isValid);
+      if (res.items && res.items.length > 0) {
+        onUpdateItems?.(res.items);
+      }
       setTimeout(() => {
         textarea.selectionStart = textarea.selectionEnd = start + 2;
       }, 0);
+    } else if (e.key === "Enter" && !e.ctrlKey && !e.metaKey) {
+      const textarea = e.currentTarget;
+      const start = textarea.selectionStart;
+      const value = textarea.value;
+      const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+      const currentLine = value.substring(lineStart, start);
+      const match = currentLine.match(/^(\s+)/);
+      const indent = match ? match[1] : "";
+      const extraIndent = /[{\[]\s*$/.test(currentLine.trim()) ? "  " : "";
+      const totalIndent = indent + extraIndent;
+
+      if (totalIndent.length > 0) {
+        e.preventDefault();
+        const end = textarea.selectionEnd;
+        const newValue =
+          value.substring(0, start) + "\n" + totalIndent + value.substring(end);
+        setJsonText(newValue);
+        const res = tolerantParseSyllabus(newValue, items);
+        setIsValidJson(res.isValid);
+        if (res.items && res.items.length > 0) {
+          onUpdateItems?.(res.items);
+        }
+        setTimeout(() => {
+          textarea.selectionStart = textarea.selectionEnd =
+            start + 1 + totalIndent.length;
+        }, 0);
+      }
     }
   };
 
@@ -481,65 +536,56 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
     >
       {isJsonMode ? (
         <div className="flex-1 flex flex-col h-full overflow-hidden animate-in fade-in duration-100">
-          {/* Clean header bar */}
-          <div className="flex items-center justify-between px-3.5 py-2 border-b border-neutral-100 dark:border-neutral-800 text-xs select-none">
-            <span className="font-mono uppercase tracking-wider text-[10px] font-semibold text-neutral-500 dark:text-neutral-400">
-              JSON Mode
-            </span>
-            <div className="flex items-center gap-2">
+          {/* Header bar */}
+          <div className="flex items-center justify-end px-3.5 py-2 border-b border-neutral-100 dark:border-neutral-800 text-xs select-none bg-neutral-50/50 dark:bg-[#1a1a1c]/50">
+            <div className="flex items-center gap-1.5">
               <button
                 type="button"
-                onClick={() => {
-                  try {
-                    const parsed = JSON.parse(jsonText);
-                    setJsonText(JSON.stringify(parsed, null, 2));
-                    setJsonError(null);
-                  } catch (e: any) {
-                    setJsonError(e.message);
-                  }
-                }}
-                className="px-2 py-1 text-[11px] font-mono text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded transition-colors cursor-pointer"
+                onClick={handleFormatJson}
+                className="px-2 py-1 text-[11px] font-mono text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded transition-colors cursor-pointer"
                 title="Format JSON indentation"
               >
                 Format
               </button>
               <button
                 type="button"
-                onClick={handleCloseJsonMode}
+                onClick={handleToggleJsonMode}
                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-200 text-white dark:text-neutral-950 font-medium text-[11px] transition-colors cursor-pointer shadow-2xs"
-                title="Apply changes & convert back to tree (Ctrl+Enter)"
+                title="Return to Tree view (Esc or Ctrl+Enter)"
               >
-                <ListTree className="w-3.5 h-3.5" />
-                <span>Done</span>
+                <Braces className="w-3.5 h-3.5" />
+                <span>Parse</span>
               </button>
             </div>
           </div>
 
-          {jsonError && (
-            <div className="mx-3 mt-2 p-2 bg-red-50 dark:bg-rose-950/40 border border-red-200 dark:border-rose-900 rounded-lg text-[11px] text-red-600 dark:text-rose-300 flex items-start gap-1.5 animate-in fade-in">
-              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-red-500" />
-              <span className="flex-1 font-mono break-all">{jsonError}</span>
-              <button
-                type="button"
-                onClick={() => setJsonError(null)}
-                className="text-red-400 hover:text-red-600 dark:hover:text-rose-200 p-0.5 cursor-pointer"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          )}
-
-          <textarea
-            value={jsonText}
-            onChange={(e) => {
-              setJsonText(e.target.value);
-              if (jsonError) setJsonError(null);
-            }}
-            onKeyDown={handleJsonKeyDown}
-            placeholder="Edit syllabus tree JSON here..."
-            spellCheck={false}
-            className="flex-1 w-full p-3.5 font-mono text-xs leading-relaxed bg-transparent text-neutral-800 dark:text-neutral-200 outline-none resize-none selection:bg-blue-100 dark:selection:bg-blue-900 overflow-y-auto"
-          />
+          {/* Formatted live editor */}
+          <div className="relative flex-1 w-full h-full overflow-hidden bg-white dark:bg-[#1c1c1e]">
+            <pre
+              ref={preRef}
+              aria-hidden="true"
+              className="absolute inset-0 pointer-events-none select-none m-0 p-3.5 font-mono text-xs leading-[20px] whitespace-pre-wrap break-words overflow-hidden [tab-size:2]"
+              dangerouslySetInnerHTML={{
+                __html:
+                  highlightJson(jsonText, isValidJson) +
+                  (jsonText.endsWith("\n") ? " " : ""),
+              }}
+            />
+            <textarea
+              ref={textareaRef}
+              value={jsonText}
+              onChange={handleJsonChange}
+              onScroll={handleJsonScroll}
+              onKeyDown={handleJsonKeyDown}
+              placeholder="Edit syllabus tree JSON here..."
+              spellCheck={false}
+              className={`relative w-full h-full m-0 p-3.5 font-mono text-xs leading-[20px] whitespace-pre-wrap break-words bg-transparent outline-none resize-none overflow-y-auto text-transparent selection:text-transparent [tab-size:2] ${
+                isValidJson
+                  ? "caret-neutral-900 dark:caret-white selection:bg-blue-500/25 dark:selection:bg-blue-400/30"
+                  : "caret-red-500 dark:caret-rose-400 selection:bg-rose-500/25 dark:selection:bg-rose-400/30"
+              }`}
+            />
+          </div>
         </div>
       ) : (
         <div className="h-full flex flex-col p-4 overflow-y-auto select-none font-manrope">
@@ -548,7 +594,7 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
             <div className="flex justify-end items-center -mt-1 -mr-1 mb-1">
               <button
                 type="button"
-                onClick={handleOpenJsonMode}
+                onClick={handleToggleJsonMode}
                 className="p-1 rounded-md text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
                 title="Edit tree as JSON"
                 aria-label="Edit tree as JSON"

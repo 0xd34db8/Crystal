@@ -197,16 +197,28 @@ export function tryParseSyllabusJson(
 
   // 4. Extract items and title
   let rawItems: any[] | null = null;
-  let detectedTitle = fallbackTitle?.trim() || "";
+  let jsonTitle = "";
 
   if (Array.isArray(parsed)) {
     rawItems = parsed;
-  } else if (Array.isArray(parsed.items)) {
-    rawItems = parsed.items;
-    detectedTitle = detectedTitle || parsed.courseTitle || parsed.fileName || "";
-  } else if (parsed.syllabus && Array.isArray(parsed.syllabus.items)) {
-    rawItems = parsed.syllabus.items;
-    detectedTitle = detectedTitle || parsed.syllabus.courseTitle || parsed.syllabus.fileName || "";
+  } else if (parsed && typeof parsed === "object") {
+    if (Array.isArray(parsed.items)) {
+      rawItems = parsed.items;
+    } else if (parsed.syllabus && Array.isArray(parsed.syllabus.items)) {
+      rawItems = parsed.syllabus.items;
+    }
+    jsonTitle =
+      parsed.courseTitle ||
+      parsed.fileName ||
+      parsed.title ||
+      parsed.name ||
+      parsed.courseName ||
+      parsed.course ||
+      parsed.subject ||
+      parsed.syllabus?.courseTitle ||
+      parsed.syllabus?.fileName ||
+      parsed.syllabus?.title ||
+      "";
   }
 
   if (!rawItems || rawItems.length === 0) return null;
@@ -216,6 +228,28 @@ export function tryParseSyllabusJson(
     (item) => item && typeof item === "object" && typeof item.title === "string" && item.title.trim().length > 0,
   );
   if (!isLikelySyllabus) return null;
+
+  let detectedTitle = jsonTitle.trim();
+
+  // If JSON had no title, use fallbackTitle if it is not generic
+  if (!detectedTitle && fallbackTitle && fallbackTitle.trim()) {
+    const cleanFallback = fallbackTitle.trim();
+    if (cleanFallback !== "New Syllabus" && cleanFallback !== "Imported Syllabus") {
+      detectedTitle = cleanFallback;
+    }
+  }
+
+  // If still no title and rawItems exist, derive from first item title
+  if (!detectedTitle && rawItems.length > 0) {
+    const first = rawItems[0];
+    if (first && typeof first.title === "string" && first.title.trim()) {
+      const cleanFirst = first.title
+        .trim()
+        .replace(/^(?:unit|module|chapter|co)\s*[\divx]+[:\-–]\s*/i, "")
+        .trim();
+      detectedTitle = cleanFirst || first.title.trim();
+    }
+  }
 
   // Recursive normalizer to build full SyllabusItem nodes
   function normalizeNode(node: any, prefix: string, index: number): SyllabusItem {
@@ -244,7 +278,7 @@ export function tryParseSyllabusJson(
   }
 
   const items = rawItems.map((item, idx) => normalizeNode(item, "u", idx));
-  const finalTitle = detectedTitle.trim() || "Imported Syllabus";
+  const finalTitle = detectedTitle.trim() || "Course Syllabus";
 
   return {
     id: parsed.id && typeof parsed.id === "string" ? parsed.id : `syllabus-${Date.now()}`,
@@ -254,4 +288,306 @@ export function tryParseSyllabusJson(
     isDraft: false,
   };
 }
+
+/**
+ * Serializes syllabus items to clean, human-readable JSON with 2-space indentation.
+ * Omits internal UI states while preserving statuses, children, and optional courseTitle.
+ */
+export function serializeSyllabusToJson(
+  items: SyllabusItem[],
+  courseTitle?: string,
+): string {
+  function cleanItem(item: SyllabusItem): any {
+    const clean: any = { title: item.title };
+    if (item.status && item.status !== "untouched") {
+      clean.status = item.status;
+    }
+    if (item.children && item.children.length > 0) {
+      clean.children = item.children.map(cleanItem);
+    }
+    return clean;
+  }
+
+  const cleanedItems = items.map(cleanItem);
+
+  if (courseTitle && courseTitle.trim()) {
+    return JSON.stringify(
+      {
+        courseTitle: courseTitle.trim(),
+        items: cleanedItems,
+      },
+      null,
+      2,
+    );
+  }
+
+  return JSON.stringify(cleanedItems, null, 2);
+}
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+/**
+ * Produces syntax-highlighted HTML for JSON code.
+ * If isValid is false, all text is styled in red for live visual feedback.
+ */
+export function highlightJson(code: string, isValid: boolean): string {
+  if (!code) return "";
+  if (!isValid) {
+    return `<span class="text-red-500 dark:text-rose-400">${escapeHtml(code)}</span>`;
+  }
+
+  const tokenRegex =
+    /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?|[{}\[\],:])/g;
+
+  let lastIndex = 0;
+  let html = "";
+  let match: RegExpExecArray | null;
+
+  while ((match = tokenRegex.exec(code)) !== null) {
+    if (match.index > lastIndex) {
+      html += escapeHtml(code.slice(lastIndex, match.index));
+    }
+    const token = match[0];
+    lastIndex = match.index + token.length;
+
+    if (token.startsWith('"')) {
+      if (token.endsWith(":")) {
+        const colonIndex = token.lastIndexOf(":");
+        const keyPart = token.slice(0, colonIndex);
+        const colonPart = token.slice(colonIndex);
+        html += `<span class="text-sky-600 dark:text-sky-400 font-semibold">${escapeHtml(keyPart)}</span><span class="text-neutral-500 dark:text-neutral-400">${escapeHtml(colonPart)}</span>`;
+      } else {
+        html += `<span class="text-emerald-600 dark:text-emerald-400">${escapeHtml(token)}</span>`;
+      }
+    } else if (/^(true|false|null)$/.test(token)) {
+      html += `<span class="text-amber-600 dark:text-amber-400 font-medium">${escapeHtml(token)}</span>`;
+    } else if (/^-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?$/.test(token)) {
+      html += `<span class="text-purple-600 dark:text-purple-400">${escapeHtml(token)}</span>`;
+    } else if (/[{}\[\]]/.test(token)) {
+      html += `<span class="text-neutral-800 dark:text-neutral-200 font-bold">${escapeHtml(token)}</span>`;
+    } else if (token === ",") {
+      html += `<span class="text-neutral-400 dark:text-neutral-500">${escapeHtml(token)}</span>`;
+    } else {
+      html += escapeHtml(token);
+    }
+  }
+
+  if (lastIndex < code.length) {
+    html += escapeHtml(code.slice(lastIndex));
+  }
+
+  return html;
+}
+
+/**
+ * Fault-tolerant JSON parser for syllabus editing.
+ * Checks strict JSON validity. If invalid, repairs unclosed quotes/brackets, trailing commas,
+ * and extracts syllabus items while marking isValid as false.
+ * Matches existing items to preserve attached notes, statuses, and stable IDs.
+ */
+export function tolerantParseSyllabus(
+  rawInput: string,
+  existingItems: SyllabusItem[] = [],
+): { items: SyllabusItem[] | null; isValid: boolean; courseTitle?: string } {
+  if (!rawInput || typeof rawInput !== "string") {
+    return { items: null, isValid: false };
+  }
+
+  const trimmed = rawInput.trim();
+  if (!trimmed) {
+    return { items: [], isValid: true };
+  }
+
+  let isValid = false;
+  let rawData: any = null;
+
+  // 1. Strict JSON parse
+  try {
+    rawData = JSON.parse(trimmed);
+    isValid = true;
+  } catch {
+    isValid = false;
+  }
+
+  // 2. If not strictly valid, try sanitized + auto-repaired parse
+  if (!isValid) {
+    const cleaned = sanitizeJsonCandidate(trimmed);
+    try {
+      rawData = JSON.parse(cleaned);
+    } catch {
+      let s = cleaned;
+      // remove trailing commas
+      s = s.replace(/,\s*([\]}])/g, "$1");
+      // insert commas between adjacent objects or arrays
+      s = s.replace(/}\s*\{/g, "},{");
+      s = s.replace(/]\s*\[/g, "],[");
+
+      // Balance unclosed quotes and open bracket stack
+      let inString = false;
+      let escaped = false;
+      const stack: string[] = [];
+
+      for (let i = 0; i < s.length; i++) {
+        const c = s[i];
+        if (escaped) {
+          escaped = false;
+          continue;
+        }
+        if (c === "\\") {
+          escaped = true;
+          continue;
+        }
+        if (c === '"') {
+          inString = !inString;
+          continue;
+        }
+        if (!inString) {
+          if (c === "{") stack.push("}");
+          else if (c === "[") stack.push("]");
+          else if (c === "}" || c === "]") {
+            if (stack.length > 0 && stack[stack.length - 1] === c) {
+              stack.pop();
+            }
+          }
+        }
+      }
+
+      if (inString) {
+        s += '"';
+      }
+
+      s = s.replace(/,\s*$/, "");
+
+      while (stack.length > 0) {
+        s += stack.pop();
+      }
+
+      try {
+        rawData = JSON.parse(s);
+      } catch {
+        // Fallback: extract any items by title
+        rawData = extractFallbackTitles(cleaned);
+      }
+    }
+  }
+
+  // Extract rawItems array
+  let rawItems: any[] | null = null;
+  if (Array.isArray(rawData)) {
+    rawItems = rawData;
+  } else if (rawData && typeof rawData === "object") {
+    if (Array.isArray(rawData.items)) {
+      rawItems = rawData.items;
+    } else if (rawData.syllabus && Array.isArray(rawData.syllabus.items)) {
+      rawItems = rawData.syllabus.items;
+    }
+  }
+
+  if (!rawItems || !Array.isArray(rawItems) || rawItems.length === 0) {
+    return { items: null, isValid };
+  }
+
+  // Build existing item lookup by ID and lowercase title to preserve notes and statuses
+  const existingMap = new Map<string, SyllabusItem>();
+  function indexExisting(list: SyllabusItem[]) {
+    for (const it of list) {
+      if (it.id) existingMap.set(it.id, it);
+      if (it.title) existingMap.set(it.title.trim().toLowerCase(), it);
+      if (it.children) indexExisting(it.children);
+    }
+  }
+  indexExisting(existingItems);
+
+  function normalizeItem(node: any, prefix: string, idx: number): SyllabusItem {
+    const rawTitle =
+      typeof node === "string"
+        ? node
+        : node && node.title
+          ? String(node.title)
+          : `Topic ${idx + 1}`;
+    const title = rawTitle.trim() || `Topic ${idx + 1}`;
+    const matched =
+      existingMap.get(title.toLowerCase()) ||
+      (node && node.id ? existingMap.get(node.id) : null);
+
+    const id =
+      node && node.id && typeof node.id === "string"
+        ? node.id
+        : matched
+          ? matched.id
+          : `${prefix}-${Date.now()}-${idx}`;
+    const status: TopicStatus =
+      node && ["done", "partial", "barely", "untouched"].includes(node.status)
+        ? node.status
+        : matched
+          ? matched.status
+          : "untouched";
+    const note =
+      node && node.note ? node.note : matched ? matched.note : undefined;
+    const hasNote = Boolean(
+      (node && (node.hasNote || node.note)) ||
+        (matched && (matched.hasNote || matched.note)),
+    );
+    const isExpanded =
+      node && node.isExpanded !== undefined
+        ? Boolean(node.isExpanded)
+        : matched
+          ? matched.isExpanded
+          : true;
+
+    const children =
+      Array.isArray(node.children) && node.children.length > 0
+        ? node.children.map((c: any, cIdx: number) =>
+            normalizeItem(c, id, cIdx),
+          )
+        : undefined;
+
+    return {
+      id,
+      title,
+      status,
+      note,
+      hasNote,
+      isExpanded,
+      children,
+    };
+  }
+
+  const items = rawItems.map((it, idx) => normalizeItem(it, "u", idx));
+
+  let detectedCourseTitle: string | undefined = undefined;
+  if (!Array.isArray(rawData) && rawData && typeof rawData === "object") {
+    const candidate =
+      rawData.courseTitle ||
+      rawData.fileName ||
+      rawData.title ||
+      rawData.name ||
+      rawData.courseName ||
+      rawData.subject;
+    if (typeof candidate === "string" && candidate.trim()) {
+      detectedCourseTitle = candidate.trim();
+    }
+  }
+
+  return { items, isValid, courseTitle: detectedCourseTitle };
+}
+
+function extractFallbackTitles(text: string): any[] | null {
+  const titleRegex = /"title"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/g;
+  const items: any[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = titleRegex.exec(text)) !== null) {
+    const title = match[1].replace(/\\"/g, '"').trim();
+    if (title) {
+      items.push({ title });
+    }
+  }
+  return items.length > 0 ? items : null;
+}
+
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { ApiKeyModal } from "@/components/ApiKeyModal";
@@ -46,6 +46,7 @@ export default function HomePage() {
   const [hasCopiedTreePrompt, setHasCopiedTreePrompt] = useState(false);
   const [coreSyllabusOnly, setCoreSyllabusOnly] = useState(true);
   const [isOpeningSyllabus, setIsOpeningSyllabus] = useState(false);
+  const isProcessingPasteRef = useRef(false);
 
   // AI & Processing state
   const [isFormatting, setIsFormatting] = useState(false);
@@ -84,9 +85,10 @@ export default function HomePage() {
 
   // Process pasted text: parses syllabus JSON, saves it, and opens the editor
   const processPastedText = (text: string): boolean => {
-    if (!text || typeof text !== "string") return false;
+    if (!text || typeof text !== "string" || isProcessingPasteRef.current) return false;
     const syllabusData = tryParseSyllabusJson(text, syllabusName);
     if (syllabusData) {
+      isProcessingPasteRef.current = true;
       setIsOpeningSyllabus(true);
       saveSyllabus(syllabusData);
       setActiveSyllabusId(syllabusData.id);
@@ -103,7 +105,14 @@ export default function HomePage() {
       window.focus();
     }
 
+    let lastPasteTimestamp = 0;
+
     const handlePasteEvent = (e: ClipboardEvent) => {
+      if (isProcessingPasteRef.current) return;
+      const now = Date.now();
+      if (now - lastPasteTimestamp < 1000) return;
+      lastPasteTimestamp = now;
+
       const pastedText = e.clipboardData?.getData("text") || "";
       if (pastedText && processPastedText(pastedText)) {
         e.preventDefault();
@@ -111,34 +120,37 @@ export default function HomePage() {
       }
     };
 
-    const handleGlobalKeyDown = async (e: KeyboardEvent) => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (isProcessingPasteRef.current) return;
       const isPasteShortcut =
         (e.metaKey || e.ctrlKey) &&
         (e.key?.toLowerCase() === "v" || e.code === "KeyV");
 
       if (!isPasteShortcut) return;
 
-      if (navigator.clipboard && typeof navigator.clipboard.readText === "function") {
-        try {
-          const clipboardText = await navigator.clipboard.readText();
-          if (clipboardText && processPastedText(clipboardText)) {
-            e.preventDefault();
-            e.stopPropagation();
-          }
-        } catch {}
-      }
+      setTimeout(async () => {
+        if (isProcessingPasteRef.current) return;
+        const now = Date.now();
+        if (now - lastPasteTimestamp < 1000) return;
+
+        if (navigator.clipboard && typeof navigator.clipboard.readText === "function") {
+          try {
+            const clipboardText = await navigator.clipboard.readText();
+            if (clipboardText && !isProcessingPasteRef.current) {
+              lastPasteTimestamp = Date.now();
+              processPastedText(clipboardText);
+            }
+          } catch {}
+        }
+      }, 50);
     };
 
     window.addEventListener("paste", handlePasteEvent, true);
-    document.addEventListener("paste", handlePasteEvent, true);
     window.addEventListener("keydown", handleGlobalKeyDown, true);
-    document.addEventListener("keydown", handleGlobalKeyDown, true);
 
     return () => {
       window.removeEventListener("paste", handlePasteEvent, true);
-      document.removeEventListener("paste", handlePasteEvent, true);
       window.removeEventListener("keydown", handleGlobalKeyDown, true);
-      document.removeEventListener("keydown", handleGlobalKeyDown, true);
     };
   }, [syllabusName, router]);
 

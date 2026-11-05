@@ -250,6 +250,8 @@ export default function EditPage() {
         >
           <SyllabusTree
             items={syllabus.items}
+            courseTitle={syllabus.fileName}
+            onUpdateTitle={handleFileNameChange}
             selectedTopicId={selectedTopicId}
             onSelectTopic={(topic) => {
               setSelectedTopicId(topic.id);
