@@ -1,11 +1,11 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { AppHeader } from "@/components/layout/AppHeader";
-import { ApiKeyModal } from "@/components/ApiKeyModal";
+import { ApiKeyModal } from "@/components/modals/ApiKeyModal";
 import { RecentFileCard } from "@/components/home/RecentFileCard";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import {
   getSavedSyllabi,
   saveSyllabus,
@@ -21,7 +21,7 @@ import {
   createStarterSyllabus,
   tryParseSyllabusJson,
 } from "@/lib/parser";
-import { formatSyllabusWithAI, getSyllabusTreePrompt } from "@/lib/gemini";
+import { formatSyllabusWithAI, getSyllabusTreePrompt } from "@/lib/ai";
 import { processSyllabusFile } from "@/lib/fileUtils";
 import { SyllabusData } from "@/types/syllabus";
 import {

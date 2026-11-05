@@ -324,65 +324,7 @@ export function serializeSyllabusToJson(
   return JSON.stringify(cleanedItems, null, 2);
 }
 
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
-/**
- * Produces syntax-highlighted HTML for JSON code.
- * If isValid is false, all text is styled in red for live visual feedback.
- */
-export function highlightJson(code: string, isValid: boolean): string {
-  if (!code) return "";
-  if (!isValid) {
-    return `<span class="text-red-500 dark:text-rose-400">${escapeHtml(code)}</span>`;
-  }
-
-  const tokenRegex =
-    /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?|[{}\[\],:])/g;
-
-  let lastIndex = 0;
-  let html = "";
-  let match: RegExpExecArray | null;
-
-  while ((match = tokenRegex.exec(code)) !== null) {
-    if (match.index > lastIndex) {
-      html += escapeHtml(code.slice(lastIndex, match.index));
-    }
-    const token = match[0];
-    lastIndex = match.index + token.length;
-
-    if (token.startsWith('"')) {
-      if (token.endsWith(":")) {
-        const colonIndex = token.lastIndexOf(":");
-        const keyPart = token.slice(0, colonIndex);
-        const colonPart = token.slice(colonIndex);
-        html += `<span class="text-sky-600 dark:text-sky-400 font-semibold">${escapeHtml(keyPart)}</span><span class="text-neutral-500 dark:text-neutral-400">${escapeHtml(colonPart)}</span>`;
-      } else {
-        html += `<span class="text-emerald-600 dark:text-emerald-400">${escapeHtml(token)}</span>`;
-      }
-    } else if (/^(true|false|null)$/.test(token)) {
-      html += `<span class="text-amber-600 dark:text-amber-400 font-medium">${escapeHtml(token)}</span>`;
-    } else if (/^-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?$/.test(token)) {
-      html += `<span class="text-purple-600 dark:text-purple-400">${escapeHtml(token)}</span>`;
-    } else if (/[{}\[\]]/.test(token)) {
-      html += `<span class="text-neutral-800 dark:text-neutral-200 font-bold">${escapeHtml(token)}</span>`;
-    } else if (token === ",") {
-      html += `<span class="text-neutral-400 dark:text-neutral-500">${escapeHtml(token)}</span>`;
-    } else {
-      html += escapeHtml(token);
-    }
-  }
-
-  if (lastIndex < code.length) {
-    html += escapeHtml(code.slice(lastIndex));
-  }
-
-  return html;
-}
+export { highlightJson } from "@/components/editor/JsonTreeEditor";
 
 /**
  * Fault-tolerant JSON parser for syllabus editing.

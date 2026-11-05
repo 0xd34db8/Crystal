@@ -5,10 +5,9 @@ import {
   saveAIConfig,
   getAIConfig,
   removeApiKey,
-  AIConfig,
-  LLMProvider,
   getDefaultModelForProvider,
 } from "@/lib/storage";
+import { AIConfig, LLMProvider } from "@/types/ai";
 import { testUniversalApiKey } from "@/lib/ai";
 import {
   Key,

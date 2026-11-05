@@ -6,7 +6,7 @@ import {
   applyThemeToDocument,
   persistTheme,
   readStoredTheme,
-} from "./theme";
+} from "@/lib/theme";
 
 /**
  * Shared theme store: every consumer (multiple toggles, etc.) stays in sync,

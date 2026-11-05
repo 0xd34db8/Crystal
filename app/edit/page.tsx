@@ -1,12 +1,12 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
-import { TopBar } from "@/components/TopBar";
-import { SyllabusTree } from "@/components/SyllabusTree";
-import { NoteEditor } from "@/components/NoteEditor";
-import { StatusChip } from "@/components/StatusChip";
-import { SubsectionsDrawer } from "@/components/SubsectionsDrawer";
-import { ApiKeyModal } from "@/components/ApiKeyModal";
+import { TopBar } from "@/components/editor/TopBar";
+import { SyllabusTree } from "@/components/editor/SyllabusTree";
+import { NoteEditor } from "@/components/editor/NoteEditor";
+import { StatusChip } from "@/components/editor/StatusChip";
+import { SubsectionsDrawer } from "@/components/editor/SubsectionsDrawer";
+import { ApiKeyModal } from "@/components/modals/ApiKeyModal";
 import { ListTree, ChevronUp } from "lucide-react";
 import { initialSyllabusData } from "@/lib/mockData";
 import {

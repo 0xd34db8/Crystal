@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { AppHeader } from "./layout/AppHeader";
-import { ThemeToggle } from "./ThemeToggle";
+import { AppHeader } from "@/components/layout/AppHeader";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Search, Download, Key, X } from "lucide-react";
 
 interface TopBarProps {

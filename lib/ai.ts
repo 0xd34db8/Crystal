@@ -1,20 +1,10 @@
 import { SyllabusData, SyllabusItem } from "@/types/syllabus";
+import { AIConfig, CallLLMOptions } from "@/types/ai";
 import {
-  AIConfig,
   getAIConfig,
   getDefaultModelForProvider,
   detectProviderFromKey,
 } from "./storage";
-
-interface CallLLMOptions {
-  systemPrompt?: string;
-  userPrompt: string;
-  jsonOutput?: boolean;
-  fileData?: {
-    base64: string;
-    mimeType: string;
-  };
-}
 
 function resolveConfig(configOrKey?: string | AIConfig): AIConfig {
   const saved = getAIConfig();

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import {
@@ -7,45 +7,21 @@ import {
   NoteComment,
   TopicStatus,
 } from "@/types/syllabus";
-import { ApiKeyModal } from "./ApiKeyModal";
+import { ApiKeyModal } from "@/components/modals/ApiKeyModal";
 import { getApiKey } from "@/lib/storage";
 import {
   generateNotesWithAI,
   getNoteGenerationPrompt,
 } from "@/lib/ai";
-import { useEditor, EditorContent, ReactNodeViewRenderer } from "@tiptap/react";
-import { ResizableImage } from "./ResizableImage";
-import { Extension } from "@tiptap/core";
+import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import Underline from "@tiptap/extension-underline";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
-import Highlight from "@tiptap/extension-highlight";
 import TextAlign from "@tiptap/extension-text-align";
-import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import { Markdown } from "tiptap-markdown";
 import {
-  Bold,
-  Italic,
-  Underline as UnderlineIcon,
-  Strikethrough,
-  Highlighter,
-  Code,
-  List,
-  ListOrdered,
-  CheckSquare,
-  Quote,
-  FileCode,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  AlignJustify,
-  Minus,
-  RemoveFormatting,
-  Undo2,
-  Redo2,
   Edit3,
   Plus,
   X,
@@ -59,134 +35,14 @@ import {
   Minimize2,
   ImageIcon,
 } from "lucide-react";
-
-// Markdown serialization extensions to cleanly bridge TipTap nodes to standard markdown strings
-const CustomImage = Image.extend({
-  addAttributes() {
-    return {
-      ...this.parent?.(),
-      width: {
-        default: null,
-        parseHTML: (element) => {
-          const width = element.getAttribute("width") || element.style.width;
-          if (!width) return null;
-          const parsed = parseInt(width, 10);
-          return isNaN(parsed) ? width : parsed;
-        },
-        renderHTML: (attributes) => {
-          if (!attributes.width) return {};
-          return { width: attributes.width };
-        },
-      },
-      textAlign: {
-        default: "left",
-        parseHTML: (element) => {
-          return (
-            element.getAttribute("data-align") ||
-            element.style.textAlign ||
-            "left"
-          );
-        },
-        renderHTML: (attributes) => {
-          if (!attributes.textAlign || attributes.textAlign === "left")
-            return {};
-          return {
-            "data-align": attributes.textAlign,
-            style: `text-align: ${attributes.textAlign}`,
-          };
-        },
-      },
-    };
-  },
-  addNodeView() {
-    return ReactNodeViewRenderer(ResizableImage);
-  },
-  addStorage() {
-    return {
-      markdown: {
-        serialize(state: any, node: any) {
-          const hasCustomAttrs =
-            node.attrs.width ||
-            (node.attrs.textAlign && node.attrs.textAlign !== "left");
-          if (hasCustomAttrs) {
-            const widthAttr = node.attrs.width
-              ? ` width="${node.attrs.width}"`
-              : "";
-            const alignAttr =
-              node.attrs.textAlign && node.attrs.textAlign !== "left"
-                ? ` data-align="${node.attrs.textAlign}"`
-                : "";
-            const titleAttr = node.attrs.title
-              ? ` title="${state.esc(node.attrs.title)}"`
-              : "";
-            state.write(
-              `<img src="${node.attrs.src}" alt="${state.esc(
-                node.attrs.alt || "",
-              )}"${widthAttr}${alignAttr}${titleAttr} />`,
-            );
-          } else {
-            state.write(
-              `![${state.esc(node.attrs.alt || "")}](${node.attrs.src}${
-                node.attrs.title ? ` "${state.esc(node.attrs.title)}"` : ""
-              })`,
-            );
-          }
-        },
-        parse: {},
-      },
-    };
-  },
-});
-
-const CustomUnderline = Underline.extend({
-  addStorage() {
-    return {
-      markdown: {
-        serialize: {
-          open: "<u>",
-          close: "</u>",
-        },
-      },
-    };
-  },
-});
-
-const CustomHighlight = Highlight.extend({
-  addStorage() {
-    return {
-      markdown: {
-        serialize: {
-          open: "==",
-          close: "==",
-        },
-      },
-    };
-  },
-});
-
-const CustomShortcuts = Extension.create({
-  name: "customShortcuts",
-  addKeyboardShortcuts() {
-    return {
-      "Mod-Shift-s": () => this.editor.commands.toggleStrike(),
-      "Mod-Shift-S": () => this.editor.commands.toggleStrike(),
-      "Mod-Shift-l": () => this.editor.commands.setTextAlign("left"),
-      "Mod-Shift-L": () => this.editor.commands.setTextAlign("left"),
-      "Mod-Shift-e": () => this.editor.commands.setTextAlign("center"),
-      "Mod-Shift-E": () => this.editor.commands.setTextAlign("center"),
-      "Mod-Shift-r": () => this.editor.commands.setTextAlign("right"),
-      "Mod-Shift-R": () => this.editor.commands.setTextAlign("right"),
-      "Mod-Shift-j": () => this.editor.commands.setTextAlign("justify"),
-      "Mod-Shift-J": () => this.editor.commands.setTextAlign("justify"),
-      "Mod-Shift-9": () => this.editor.commands.toggleTaskList(),
-    };
-  },
-});
-
-const getEditorMarkdown = (ed: any): string => {
-  if (!ed) return "";
-  return (ed.storage as any)?.markdown?.getMarkdown?.() ?? "";
-};
+import {
+  CustomImage,
+  CustomUnderline,
+  CustomHighlight,
+  CustomShortcuts,
+  getEditorMarkdown,
+} from "./extensions";
+import { EditorToolbar } from "./EditorToolbar";
 
 interface NoteEditorProps {
   selectedTopic: SyllabusItem | null;
@@ -726,15 +582,6 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
     );
   }
 
-  const getBtnClass = (isActive: boolean, isDisabled: boolean = false) =>
-    `p-1.5 rounded transition-colors cursor-pointer ${
-      isDisabled
-        ? "text-muted-foreground/40 cursor-not-allowed"
-        : isActive
-          ? "bg-card text-foreground font-semibold shadow-xs"
-          : "text-foreground-subtle hover:bg-card hover:text-foreground"
-    }`;
-
   return (
     <div
       data-editor-pane="true"
@@ -884,222 +731,8 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
         </div>
       </div>
 
-      {/* MS Word-level Rich Text Formatting Toolbar */}
-      {editor && (
-        <div className="px-3 sm:px-6 md:px-8 py-2 border-b border-border-subtle flex items-center gap-1 bg-subtle text-foreground-subtle text-xs overflow-x-auto no-scrollbar flex-nowrap sm:flex-wrap">
-          {/* History: Undo / Redo */}
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().undo().run()}
-            disabled={!editor.can().undo()}
-            className={getBtnClass(false, !editor.can().undo())}
-            title="Undo (Ctrl+Z)"
-          >
-            <Undo2 className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().redo().run()}
-            disabled={!editor.can().redo()}
-            className={getBtnClass(false, !editor.can().redo())}
-            title="Redo (Ctrl+Y)"
-          >
-            <Redo2 className="w-3.5 h-3.5" />
-          </button>
-
-          <div className="w-[1px] h-4 bg-border mx-1" />
-
-          {/* Style Selector: Normal text, H1, H2, H3 */}
-          <select
-            value={
-              editor.isActive("heading", { level: 1 })
-                ? "1"
-                : editor.isActive("heading", { level: 2 })
-                  ? "2"
-                  : editor.isActive("heading", { level: 3 })
-                    ? "3"
-                    : "p"
-            }
-            onChange={(e) => {
-              const val = e.target.value;
-              if (val === "p") {
-                editor.chain().focus().setParagraph().run();
-              } else {
-                editor
-                  .chain()
-                  .focus()
-                  .toggleHeading({ level: parseInt(val) as 1 | 2 | 3 })
-                  .run();
-              }
-            }}
-            className="text-xs bg-card border border-border rounded-md px-2 py-1 text-foreground outline-none cursor-pointer hover:border-border font-medium"
-            title="Text style"
-          >
-            <option value="p">Normal text</option>
-            <option value="1">Heading 1 (Ctrl+Alt+1)</option>
-            <option value="2">Heading 2 (Ctrl+Alt+2)</option>
-            <option value="3">Heading 3 (Ctrl+Alt+3)</option>
-          </select>
-
-          <div className="w-[1px] h-4 bg-border mx-1" />
-
-          {/* Inline Marks: Bold, Italic, Underline, Strike, Highlight, Code */}
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().toggleBold().run()}
-            className={getBtnClass(editor.isActive("bold"))}
-            title="Bold (Ctrl+B)"
-          >
-            <Bold className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().toggleItalic().run()}
-            className={getBtnClass(editor.isActive("italic"))}
-            title="Italic (Ctrl+I)"
-          >
-            <Italic className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().toggleUnderline().run()}
-            className={getBtnClass(editor.isActive("underline"))}
-            title="Underline (Ctrl+U)"
-          >
-            <UnderlineIcon className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().toggleStrike().run()}
-            className={getBtnClass(editor.isActive("strike"))}
-            title="Strikethrough (Ctrl+Shift+S)"
-          >
-            <Strikethrough className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().toggleHighlight().run()}
-            className={getBtnClass(editor.isActive("highlight"))}
-            title="Highlight marker"
-          >
-            <Highlighter className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().toggleCode().run()}
-            className={getBtnClass(editor.isActive("code"))}
-            title="Inline Code (Ctrl+E)"
-          >
-            <Code className="w-3.5 h-3.5" />
-          </button>
-
-          <div className="w-[1px] h-4 bg-border mx-1" />
-
-          {/* Lists & Structural Elements */}
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
-            className={getBtnClass(editor.isActive("bulletList"))}
-            title="Bullet list (Ctrl+Shift+8)"
-          >
-            <List className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().toggleOrderedList().run()}
-            className={getBtnClass(editor.isActive("orderedList"))}
-            title="Numbered list (Ctrl+Shift+7)"
-          >
-            <ListOrdered className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().toggleTaskList().run()}
-            className={getBtnClass(editor.isActive("taskList"))}
-            title="Checklist / Todo (Ctrl+Shift+9)"
-          >
-            <CheckSquare className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().toggleBlockquote().run()}
-            className={getBtnClass(editor.isActive("blockquote"))}
-            title="Quote block"
-          >
-            <Quote className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-            className={getBtnClass(editor.isActive("codeBlock"))}
-            title="Code block (Ctrl+Alt+C)"
-          >
-            <FileCode className="w-3.5 h-3.5" />
-          </button>
-
-          <div className="w-[1px] h-4 bg-border mx-1" />
-
-          {/* Alignment */}
-          <button
-            type="button"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => editor.chain().focus().setTextAlign("left").run()}
-            className={getBtnClass(editor.isActive({ textAlign: "left" }))}
-            title="Align Left (Ctrl+Shift+L)"
-          >
-            <AlignLeft className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => editor.chain().focus().setTextAlign("center").run()}
-            className={getBtnClass(editor.isActive({ textAlign: "center" }))}
-            title="Align Center (Ctrl+Shift+E)"
-          >
-            <AlignCenter className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => editor.chain().focus().setTextAlign("right").run()}
-            className={getBtnClass(editor.isActive({ textAlign: "right" }))}
-            title="Align Right (Ctrl+Shift+R)"
-          >
-            <AlignRight className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => editor.chain().focus().setTextAlign("justify").run()}
-            className={getBtnClass(editor.isActive({ textAlign: "justify" }))}
-            title="Align Justify (Ctrl+Shift+J)"
-          >
-            <AlignJustify className="w-3.5 h-3.5" />
-          </button>
-
-          <div className="w-[1px] h-4 bg-border mx-1" />
-
-          {/* Horizontal Line & Clear Formatting */}
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().setHorizontalRule().run()}
-            className={getBtnClass(false)}
-            title="Horizontal Divider"
-          >
-            <Minus className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() =>
-              editor.chain().focus().unsetAllMarks().clearNodes().run()
-            }
-            className={getBtnClass(false)}
-            title="Clear formatting"
-          >
-            <RemoveFormatting className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
+      {/* Formatting Toolbar */}
+      <EditorToolbar editor={editor} className="border-b border-border-subtle" />
 
       {/* Notion-style Floating Contextual Action for Pasted Image URLs */}
       {pendingEmbedUrl && (

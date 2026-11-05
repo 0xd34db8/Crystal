@@ -12,7 +12,7 @@ import {
   Check,
 } from "lucide-react";
 import { THEMES, type ThemeMode } from "@/lib/theme";
-import { useTheme } from "@/lib/useTheme";
+import { useTheme } from "@/hooks/useTheme";
 
 export type { ThemeMode };
 

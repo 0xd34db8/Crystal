@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { CrystalLogo } from "@/components/CrystalLogo";
+import { CrystalLogo } from "@/components/ui/CrystalLogo";
 
 interface AppHeaderProps {
   /**

@@ -1,20 +1,8 @@
 import { SyllabusData } from "@/types/syllabus";
 import { initialSyllabusData } from "./mockData";
+import { LLMProvider, AIConfig } from "@/types/ai";
 
-export type LLMProvider =
-  | "gemini"
-  | "openai"
-  | "anthropic"
-  | "openrouter"
-  | "groq"
-  | "custom";
-
-export interface AIConfig {
-  provider: LLMProvider;
-  apiKey: string;
-  model?: string;
-  baseURL?: string;
-}
+export type { LLMProvider, AIConfig };
 
 const STORAGE_KEY = "crystal_syllabi_v1";
 const ACTIVE_ID_KEY = "crystal_active_syllabus_id";
