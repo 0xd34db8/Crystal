@@ -16,6 +16,7 @@ import {
 } from "@/lib/storage";
 import {
   findItemById,
+  findParentItem,
   updateItemInTree,
   deleteItemFromTree,
   addItemToTree,
@@ -69,6 +70,9 @@ export default function EditPage() {
   }, [syllabus]);
 
   const selectedTopic = findItemById(syllabus.items, selectedTopicId);
+  const parentTopic = selectedTopicId
+    ? findParentItem(syllabus.items, selectedTopicId)
+    : null;
 
   // Toggle item expanded state
   const handleToggleExpand = (itemId: string) => {
@@ -277,6 +281,7 @@ export default function EditPage() {
               setMobileTab("tree");
             }}
             courseTitle={syllabus.fileName}
+            parentTitle={parentTopic?.title}
             onRenameTopic={handleRenameTopic}
             onBackToTree={() => setMobileTab("tree")}
           />

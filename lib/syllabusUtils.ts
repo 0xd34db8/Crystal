@@ -100,6 +100,26 @@ export function findItemById(
 }
 
 /**
+ * Recursively searches for the direct parent of an item in the syllabus tree by ID
+ */
+export function findParentItem(
+  items: SyllabusItem[],
+  childId: string,
+  currentParent: SyllabusItem | null = null,
+): SyllabusItem | null {
+  for (const item of items) {
+    if (item.id === childId) {
+      return currentParent;
+    }
+    if (item.children && item.children.length > 0) {
+      const found = findParentItem(item.children, childId, item);
+      if (found !== null) return found;
+    }
+  }
+  return null;
+}
+
+/**
  * Recursively updates an item in the syllabus tree immutably
  */
 export function updateItemInTree(

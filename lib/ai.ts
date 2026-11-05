@@ -26,14 +26,18 @@ function resolveConfig(configOrKey?: string | AIConfig): AIConfig {
     return {
       ...saved,
       apiKey: key || saved.apiKey,
-      provider: saved.apiKey === key ? saved.provider : detectProviderFromKey(key),
+      provider:
+        saved.apiKey === key ? saved.provider : detectProviderFromKey(key),
       model: saved.model || getDefaultModelForProvider(saved.provider),
     };
   }
   return {
     ...saved,
     ...configOrKey,
-    model: configOrKey.model || saved.model || getDefaultModelForProvider(configOrKey.provider),
+    model:
+      configOrKey.model ||
+      saved.model ||
+      getDefaultModelForProvider(configOrKey.provider),
   };
 }
 
@@ -96,14 +100,18 @@ export async function callUniversalLLM(
       // Auto-fallback if an older model was requested but Gemini requires gemini-3.8-flash
       if (
         cleanModel !== "gemini-3.8-flash" &&
-        (msg.includes("gemini-3.8-flash") || msg.includes("no longer available") || res.status === 404)
+        (msg.includes("gemini-3.8-flash") ||
+          msg.includes("no longer available") ||
+          res.status === 404)
       ) {
-        return callUniversalLLM(options, { ...config, model: "gemini-3.8-flash" });
+        return callUniversalLLM(options, {
+          ...config,
+          model: "gemini-3.8-flash",
+        });
       }
 
       throw new Error(
-        msg ||
-          `Gemini API returned error (${res.status}: ${res.statusText})`,
+        msg || `Gemini API returned error (${res.status}: ${res.statusText})`,
       );
     }
 
@@ -250,6 +258,7 @@ interface FormatSyllabusOptions {
     mimeType: string;
   };
   preferredTitle?: string;
+  coreOnly?: boolean;
 }
 
 interface RawAiItem {
@@ -262,13 +271,14 @@ interface RawAiResponse {
   items: RawAiItem[];
 }
 
-function normalizeItems(
+export function normalizeItems(
   rawList: RawAiItem[],
   prefix = "item",
 ): SyllabusItem[] {
   return rawList.map((item, idx) => {
     const id = `${prefix}-${idx + 1}`;
-    const hasChildren = Array.isArray(item.children) && item.children.length > 0;
+    const hasChildren =
+      Array.isArray(item.children) && item.children.length > 0;
 
     return {
       id,
@@ -281,14 +291,7 @@ function normalizeItems(
   });
 }
 
-/**
- * Formats syllabus text or file into hierarchical items using the configured LLM
- */
-export async function formatSyllabusWithAI(
-  options: FormatSyllabusOptions,
-  configOrKey?: string | AIConfig,
-): Promise<SyllabusData> {
-  const systemPrompt = `You are a curriculum parser for the Crystal study application.
+export const SYLLABUS_TREE_SYSTEM_PROMPT = `You are a curriculum parser for the Crystal study application.
 Transform messy or tabular syllabus content into a clean hierarchical tree.
 
 CRITICAL FORMATTING RULES:
@@ -301,7 +304,7 @@ CRITICAL FORMATTING RULES:
   "courseTitle": "Course / Subject Title",
   "items": [
     {
-      "title": "UNIT I: ...",
+      "title": "UNIT I/Module 1: ...",
       "children": [
         {
           "title": "Section / Topic Group",
@@ -315,9 +318,87 @@ CRITICAL FORMATTING RULES:
   ]
 }`;
 
+export const CORE_SYLLABUS_FILTER_RULE = `CORE SYLLABUS ONLY RULE:
+- Focus exclusively on the core curriculum, units, modules, chapters, and conceptual topics.
+- STRICTLY IGNORE and EXCLUDE all non-core sections such as lab components, practical experiments, course outcomes, learning objectives, textbooks/reference book lists, grading schemes, evaluation rubrics, and exam patterns.`;
+
+/**
+ * Generates a prompt for external LLM interfaces (ChatGPT, Claude, Gemini, etc.)
+ * to format a syllabus into Crystal's JSON tree structure.
+ */
+export function getSyllabusTreePrompt(options?: {
+  rawText?: string;
+  coreOnly?: boolean;
+}): string {
+  const isCoreOnly = options?.coreOnly !== false;
+  let basePrompt = SYLLABUS_TREE_SYSTEM_PROMPT;
+  if (isCoreOnly) {
+    basePrompt = `${basePrompt}\n\n${CORE_SYLLABUS_FILTER_RULE}`;
+  }
+
+  if (options?.rawText && options.rawText.trim()) {
+    return `${basePrompt}\n\nSyllabus Content:\n\n${options.rawText.trim()}`;
+  }
+  return `${basePrompt}\n\nPlease parse the attached document into the structured syllabus format.`;
+}
+
+/**
+ * Generates a prompt for external LLM interfaces to produce comprehensive study notes
+ * for a specific syllabus topic in GitHub-flavored Markdown.
+ */
+export function getNoteGenerationPrompt(options: {
+  topicTitle: string;
+  parentTitle?: string;
+  courseTitle?: string;
+}): string {
+  const contextParts: string[] = [];
+  contextParts.push(`Topic: "${options.topicTitle}"`);
+  if (options.parentTitle) {
+    contextParts.push(`Unit/Section: "${options.parentTitle}"`);
+  }
+  if (options.courseTitle) {
+    contextParts.push(`Course: "${options.courseTitle}"`);
+  }
+
+  return `You are an academic study tutor for the Crystal app.
+Generate comprehensive study notes in GitHub-flavored Markdown for the given syllabus topic.
+
+${contextParts.join("\n")}
+
+Structure your notes clearly:
+### Overview
+Brief definition and scope.
+
+### Key Concepts & Mechanisms
+Bullet points breaking down mechanisms, components, and principles.
+
+### Formulas / Code / Diagrams (if applicable)
+Use clean LaTeX ($$...$$) or code blocks.
+
+### Real-World Applications & Examples
+Practical usage.
+
+### High-Yield Summary
+Key takeaways.
+
+Start directly with markdown content. Do not include conversational remarks.`;
+}
+
+/**
+ * Formats syllabus text or file into hierarchical items using the configured LLM
+ */
+export async function formatSyllabusWithAI(
+  options: FormatSyllabusOptions,
+  configOrKey?: string | AIConfig,
+): Promise<SyllabusData> {
+  const isCoreOnly = options.coreOnly !== false;
+  const systemPrompt = isCoreOnly
+    ? `${SYLLABUS_TREE_SYSTEM_PROMPT}\n\n${CORE_SYLLABUS_FILTER_RULE}`
+    : SYLLABUS_TREE_SYSTEM_PROMPT;
+
   const userPrompt = options.text
     ? `Syllabus Content:\n\n${options.text}`
-    : "Please parse the attached document into the structured syllabus format.";
+    : "Please parse the attached document into the structured syllabus format in a code block.";
 
   const rawJson = await callUniversalLLM(
     {
@@ -453,4 +534,3 @@ Output strictly valid JSON with:
     };
   }
 }
-

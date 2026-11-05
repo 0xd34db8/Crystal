@@ -9,7 +9,11 @@ import {
 } from "@/types/syllabus";
 import { ApiKeyModal } from "./ApiKeyModal";
 import { getApiKey } from "@/lib/storage";
-import { generateNotesWithAI, generateSubCommentWithAI } from "@/lib/ai";
+import {
+  generateNotesWithAI,
+  generateSubCommentWithAI,
+  getNoteGenerationPrompt,
+} from "@/lib/ai";
 import { useEditor, EditorContent, ReactNodeViewRenderer } from "@tiptap/react";
 import { ResizableImage } from "./ResizableImage";
 import { Extension } from "@tiptap/core";
@@ -53,6 +57,8 @@ import {
   Loader2,
   AlertCircle,
   MessageSquare,
+  Copy,
+  Check,
 } from "lucide-react";
 
 // Markdown serialization extensions to cleanly bridge TipTap nodes to standard markdown strings
@@ -189,6 +195,7 @@ interface NoteEditorProps {
   onUpdateStatus: (topicId: string, status: TopicStatus) => void;
   onClose: () => void;
   courseTitle?: string;
+  parentTitle?: string;
   onRenameTopic?: (topicId: string, newTitle: string) => void;
   onBackToTree?: () => void;
 }
@@ -199,6 +206,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   onUpdateStatus,
   onClose,
   courseTitle,
+  parentTitle,
   onRenameTopic,
   onBackToTree,
 }) => {
@@ -208,6 +216,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   const [replyTitle, setReplyTitle] = useState<string>("");
   const [isAddingReply, setIsAddingReply] = useState<boolean>(false);
   const [showSubSections, setShowSubSections] = useState<boolean>(true);
+  const [hasCopiedNotePrompt, setHasCopiedNotePrompt] = useState<boolean>(false);
 
   // Topic Inline Renaming
   const [isEditingTitle, setIsEditingTitle] = useState<boolean>(false);
@@ -430,6 +439,23 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
     onSaveNote(selectedTopic.id, updatedNote);
   };
 
+  // Copy note prompt for external LLM interfaces (ChatGPT, Claude, Gemini, etc.)
+  const handleCopyNotePrompt = async () => {
+    if (!selectedTopic) return;
+    const prompt = getNoteGenerationPrompt({
+      topicTitle: selectedTopic.title,
+      parentTitle: parentTitle,
+      courseTitle: courseTitle,
+    });
+    try {
+      await navigator.clipboard.writeText(prompt);
+      setHasCopiedNotePrompt(true);
+      setTimeout(() => setHasCopiedNotePrompt(false), 2500);
+    } catch (err) {
+      console.error("Failed to copy prompt:", err);
+    }
+  };
+
   // Generate complete notes using configured AI
   const handleAiGenerateNotes = async () => {
     if (!selectedTopic) return;
@@ -446,6 +472,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       const generated = await generateNotesWithAI(
         {
           topicTitle: selectedTopic.title,
+          parentTitle: parentTitle,
           courseTitle: courseTitle,
         },
         key,
@@ -669,23 +696,38 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                 <span>Create Note</span>
               </button>
 
-              <button
-                onClick={handleAiGenerateNotes}
-                disabled={isAiGenerating}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-full text-xs font-medium shadow-sm transition-all cursor-pointer disabled:opacity-60"
-                title="Generate study notes with AI"
-              >
-                {isAiGenerating ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Generating Notes...</span>
-                  </>
-                ) : (
-                  <>
+              {/* Two-in-one button: Generate with AI + Copy Prompt */}
+              <div className="inline-flex items-center rounded-full bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-sm transition-all overflow-hidden text-xs font-medium">
+                <button
+                  type="button"
+                  onClick={handleAiGenerateNotes}
+                  disabled={isAiGenerating}
+                  className="inline-flex items-center gap-2 pl-4 pr-3 py-2 hover:bg-black/10 transition-colors cursor-pointer disabled:opacity-60"
+                  title="Generate study notes with AI"
+                >
+                  {isAiGenerating ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Generating Notes...</span>
+                    </>
+                  ) : (
                     <span>Generate with AI</span>
-                  </>
-                )}
-              </button>
+                  )}
+                </button>
+                <div className="w-px h-4 bg-white/25" />
+                <button
+                  type="button"
+                  onClick={handleCopyNotePrompt}
+                  className="inline-flex items-center justify-center px-3 py-2 hover:bg-black/10 transition-colors cursor-pointer"
+                  title={hasCopiedNotePrompt ? "Prompt Copied" : "Copy note prompt for external LLM"}
+                >
+                  {hasCopiedNotePrompt ? (
+                    <Check className="w-3.5 h-3.5 text-white" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5 text-white" />
+                  )}
+                </button>
+              </div>
             </div>
 
             {aiError && (
@@ -808,26 +850,39 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           </div>
         )}
 
-        {/* Right Actions: AI Notes Button & Close */}
-        <div className="flex items-center gap-4 sm:gap-5 z-10">
-          <button
-            type="button"
-            onClick={handleAiGenerateNotes}
-            disabled={isAiGenerating}
-            className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-full text-xs font-medium shadow-2xs hover:shadow-xs transition-all cursor-pointer disabled:opacity-50"
-            title="Generate comprehensive study notes with AI"
-          >
-            {isAiGenerating ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
-                <span className="hidden xs:inline">Generating...</span>
-              </>
-            ) : (
-              <>
+        {/* Right Actions: AI Notes + Copy Prompt Button & Close */}
+        <div className="flex items-center gap-2 sm:gap-3 z-10">
+          <div className="inline-flex items-center rounded-full bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-2xs hover:shadow-xs transition-all overflow-hidden text-xs font-medium">
+            <button
+              type="button"
+              onClick={handleAiGenerateNotes}
+              disabled={isAiGenerating}
+              className="flex items-center gap-1.5 pl-3 pr-2.5 py-1 hover:bg-black/10 transition-colors cursor-pointer disabled:opacity-50"
+              title="Generate comprehensive study notes with AI"
+            >
+              {isAiGenerating ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                  <span className="hidden xs:inline">Generating...</span>
+                </>
+              ) : (
                 <span>AI Notes</span>
-              </>
-            )}
-          </button>
+              )}
+            </button>
+            <div className="w-px h-3.5 bg-white/25" />
+            <button
+              type="button"
+              onClick={handleCopyNotePrompt}
+              className="flex items-center justify-center px-2 py-1 hover:bg-black/10 transition-colors cursor-pointer"
+              title={hasCopiedNotePrompt ? "Prompt Copied" : "Copy study note prompt"}
+            >
+              {hasCopiedNotePrompt ? (
+                <Check className="w-3.5 h-3.5 text-white" />
+              ) : (
+                <Copy className="w-3.5 h-3.5 text-white" />
+              )}
+            </button>
+          </div>
 
           <button
             type="button"

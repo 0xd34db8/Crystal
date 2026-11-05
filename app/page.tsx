@@ -15,8 +15,12 @@ import {
   getAIConfig,
   cleanupUnusedDrafts,
 } from "@/lib/storage";
-import { parseRawTextToSyllabus, createStarterSyllabus } from "@/lib/parser";
-import { formatSyllabusWithAI } from "@/lib/gemini";
+import {
+  parseRawTextToSyllabus,
+  createStarterSyllabus,
+  tryParseSyllabusJson,
+} from "@/lib/parser";
+import { formatSyllabusWithAI, getSyllabusTreePrompt } from "@/lib/gemini";
 import { processSyllabusFile } from "@/lib/fileUtils";
 import { SyllabusData } from "@/types/syllabus";
 import {
@@ -27,6 +31,8 @@ import {
   Loader2,
   AlertCircle,
   FileText,
+  Copy,
+  Check,
 } from "lucide-react";
 
 export default function HomePage() {
@@ -37,6 +43,9 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState<"file" | "text">("file");
   const [dragOver, setDragOver] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [hasCopiedTreePrompt, setHasCopiedTreePrompt] = useState(false);
+  const [coreSyllabusOnly, setCoreSyllabusOnly] = useState(true);
+  const [isOpeningSyllabus, setIsOpeningSyllabus] = useState(false);
 
   // AI & Processing state
   const [isFormatting, setIsFormatting] = useState(false);
@@ -73,7 +82,82 @@ export default function HomePage() {
     setApiKey(getApiKey());
   }, []);
 
+  // Process pasted text: parses syllabus JSON, saves it, and opens the editor
+  const processPastedText = (text: string): boolean => {
+    if (!text || typeof text !== "string") return false;
+    const syllabusData = tryParseSyllabusJson(text, syllabusName);
+    if (syllabusData) {
+      setIsOpeningSyllabus(true);
+      saveSyllabus(syllabusData);
+      setActiveSyllabusId(syllabusData.id);
+      router.push("/edit");
+      return true;
+    }
+    return false;
+  };
+
+  // Universal paste detector: works anywhere on the homepage via Cmd+V (macOS) / Ctrl+V (Windows)
+  // as well as native browser paste events, even when no text box or input is focused
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.focus();
+    }
+
+    const handlePasteEvent = (e: ClipboardEvent) => {
+      const pastedText = e.clipboardData?.getData("text") || "";
+      if (pastedText && processPastedText(pastedText)) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    const handleGlobalKeyDown = async (e: KeyboardEvent) => {
+      const isPasteShortcut =
+        (e.metaKey || e.ctrlKey) &&
+        (e.key?.toLowerCase() === "v" || e.code === "KeyV");
+
+      if (!isPasteShortcut) return;
+
+      if (navigator.clipboard && typeof navigator.clipboard.readText === "function") {
+        try {
+          const clipboardText = await navigator.clipboard.readText();
+          if (clipboardText && processPastedText(clipboardText)) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        } catch {}
+      }
+    };
+
+    window.addEventListener("paste", handlePasteEvent, true);
+    document.addEventListener("paste", handlePasteEvent, true);
+    window.addEventListener("keydown", handleGlobalKeyDown, true);
+    document.addEventListener("keydown", handleGlobalKeyDown, true);
+
+    return () => {
+      window.removeEventListener("paste", handlePasteEvent, true);
+      document.removeEventListener("paste", handlePasteEvent, true);
+      window.removeEventListener("keydown", handleGlobalKeyDown, true);
+      document.removeEventListener("keydown", handleGlobalKeyDown, true);
+    };
+  }, [syllabusName, router]);
+
+  const handleCopyTreePrompt = async () => {
+    const prompt = getSyllabusTreePrompt({
+      rawText: activeTab === "text" && rawText.trim() ? rawText : undefined,
+      coreOnly: coreSyllabusOnly,
+    });
+    try {
+      await navigator.clipboard.writeText(prompt);
+      setHasCopiedTreePrompt(true);
+      setTimeout(() => setHasCopiedTreePrompt(false), 2500);
+    } catch (err) {
+      console.error("Failed to copy prompt:", err);
+    }
+  };
+
   const handleOpenSyllabus = (id: string) => {
+    setIsOpeningSyllabus(true);
     setActiveSyllabusId(id);
     router.push("/edit");
   };
@@ -88,38 +172,25 @@ export default function HomePage() {
     setUploadedFile(file);
     setErrorMessage(null);
 
-    // If importing a .crystal file (or JSON with syllabus items), instantly open directly in editor
-    const lowerName = file.name.toLowerCase();
-    if (lowerName.endsWith(".crystal") || lowerName.endsWith(".json")) {
-      try {
-        const text = await file.text();
-        const parsed = JSON.parse(text);
-        if (parsed.items && Array.isArray(parsed.items)) {
-          const cleanName =
-            parsed.fileName || file.name.replace(/\.[^/.]+$/, "");
-          const importedSyllabus: SyllabusData = {
-            id: parsed.id || `syllabus-${Date.now()}`,
-            fileName: cleanName,
-            lastModified: "Just now",
-            items: parsed.items,
-            isDraft: false,
-          };
-          saveSyllabus(importedSyllabus);
-          setActiveSyllabusId(importedSyllabus.id);
-          router.push("/edit");
-          return;
-        }
-      } catch (err: any) {
-        setErrorMessage(
-          "Invalid .crystal file: " +
-            (err.message || "Failed to parse file content."),
-        );
+    const cleanName = file.name.replace(/\.[^/.]+$/, "");
+
+    // Check if the uploaded file is JSON or .crystal format and open immediately
+    try {
+      const text = await file.text();
+      const parsedSyllabus = tryParseSyllabusJson(
+        text,
+        syllabusName || cleanName,
+      );
+      if (parsedSyllabus) {
+        setIsOpeningSyllabus(true);
+        saveSyllabus(parsedSyllabus);
+        setActiveSyllabusId(parsedSyllabus.id);
+        router.push("/edit");
         return;
       }
-    }
+    } catch {}
 
     if (!syllabusName) {
-      const cleanName = file.name.replace(/\.[^/.]+$/, "");
       setSyllabusName(cleanName);
     }
   };
@@ -132,6 +203,18 @@ export default function HomePage() {
       uploadedFile?.name.replace(/\.[^/.]+$/, "") ||
       "New Syllabus";
 
+    // Direct check: if rawText is valid generated JSON, immediately open it without extra processing
+    if (activeTab === "text" && rawText.trim()) {
+      const directJson = tryParseSyllabusJson(rawText.trim(), title);
+      if (directJson) {
+        setIsOpeningSyllabus(true);
+        saveSyllabus(directJson);
+        setActiveSyllabusId(directJson.id);
+        router.push("/edit");
+        return;
+      }
+    }
+
     // 1. If using AI but no API key configured, prompt user to enter one
     if (useAi && !apiKey) {
       setIsApiKeyModalOpen(true);
@@ -140,9 +223,7 @@ export default function HomePage() {
 
     setIsFormatting(true);
     setStatusMessage(
-      useAi
-        ? "Formatting syllabus with AI..."
-        : "Parsing syllabus locally...",
+      useAi ? "Formatting syllabus with AI..." : "Parsing syllabus locally...",
     );
 
     try {
@@ -200,6 +281,7 @@ export default function HomePage() {
                     mimeType: "application/pdf",
                   },
                   preferredTitle: title,
+                  coreOnly: coreSyllabusOnly,
                 },
                 getAIConfig(),
               );
@@ -208,6 +290,7 @@ export default function HomePage() {
                 {
                   text: processed.text,
                   preferredTitle: title,
+                  coreOnly: coreSyllabusOnly,
                 },
                 getAIConfig(),
               );
@@ -226,6 +309,7 @@ export default function HomePage() {
             {
               text: rawText.trim(),
               preferredTitle: title,
+              coreOnly: coreSyllabusOnly,
             },
             getAIConfig(),
           );
@@ -301,35 +385,55 @@ export default function HomePage() {
               />
             </div>
 
-            {/* Tab selector */}
-            <div className="flex gap-2 p-1 bg-neutral-100 dark:bg-[#252528] rounded-xl text-xs">
+            {/* Tab selector and Copy Prompt */}
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex gap-2 p-1 bg-neutral-100 dark:bg-[#252528] rounded-xl text-xs flex-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab("file");
+                    setErrorMessage(null);
+                  }}
+                  className={`flex-1 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
+                    activeTab === "file"
+                      ? "bg-white dark:bg-[#1C1C1E] text-neutral-900 dark:text-neutral-100 shadow-xs"
+                      : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200"
+                  }`}
+                >
+                  Upload File
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab("text");
+                    setErrorMessage(null);
+                  }}
+                  className={`flex-1 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
+                    activeTab === "text"
+                      ? "bg-white dark:bg-[#1C1C1E] text-neutral-900 dark:text-neutral-100 shadow-xs"
+                      : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200"
+                  }`}
+                >
+                  Paste Text
+                </button>
+              </div>
+
               <button
                 type="button"
-                onClick={() => {
-                  setActiveTab("file");
-                  setErrorMessage(null);
-                }}
-                className={`flex-1 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
-                  activeTab === "file"
-                    ? "bg-white dark:bg-[#1C1C1E] text-neutral-900 dark:text-neutral-100 shadow-xs"
-                    : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200"
-                }`}
+                onClick={handleCopyTreePrompt}
+                title="Copy prompt to attach syllabus and generate tree JSON in ChatGPT, Claude, Gemini, etc."
+                className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded-xl text-xs font-medium transition-all cursor-pointer whitespace-nowrap"
               >
-                Upload File
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab("text");
-                  setErrorMessage(null);
-                }}
-                className={`flex-1 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
-                  activeTab === "text"
-                    ? "bg-white dark:bg-[#1C1C1E] text-neutral-900 dark:text-neutral-100 shadow-xs"
-                    : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200"
-                }`}
-              >
-                Paste Text
+                {hasCopiedTreePrompt ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>Prompt</span>
+                  </>
+                )}
               </button>
             </div>
 
@@ -377,7 +481,8 @@ export default function HomePage() {
                     : "Click or drag & drop syllabus file"}
                 </span>
                 <span className="text-[10px] text-neutral-400 dark:text-neutral-500 mt-1">
-                  Supports PDF, Word (.docx), TXT, or .crystal
+                  Supports PDF, Word (.docx), TXT, or .crystal (paste JSON
+                  anywhere to open)
                 </span>
               </label>
             ) : (
@@ -389,11 +494,35 @@ export default function HomePage() {
                     setRawText(e.target.value);
                     setErrorMessage(null);
                   }}
-                  placeholder="Paste unformatted syllabus text here:&#10;&#10;UNIT I: Introduction to Machine Learning&#10;Types of Learning: Supervised, Unsupervised, Reinforcement&#10;Theory of Generalization: Generalization bound, VC Dimension&#10;Decision Trees, Neural Networks, Ensemble Learning"
+                  onPaste={(e) => {
+                    const pastedText = e.clipboardData?.getData("text") || "";
+                    if (pastedText && processPastedText(pastedText)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  placeholder="Paste unformatted syllabus text or generated JSON here (pasting JSON will automatically open it):&#10;&#10;UNIT I: Introduction to Machine Learning&#10;Types of Learning: Supervised, Unsupervised, Reinforcement&#10;Theory of Generalization: Generalization bound, VC Dimension&#10;Decision Trees, Neural Networks, Ensemble Learning"
                   className="w-full p-3.5 bg-neutral-50 dark:bg-[#252528] border border-neutral-200 dark:border-neutral-700 rounded-2xl text-xs font-mono text-neutral-800 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 outline-none focus:border-neutral-500 dark:focus:border-neutral-400 focus:bg-white dark:focus:bg-[#2A2A2D] resize-none transition-all leading-relaxed"
                 />
               </div>
             )}
+
+            {/* Core Syllabus Only Checkbox */}
+            <div className="flex items-center pt-0.5">
+              <label
+                className="inline-flex items-center gap-2 cursor-pointer select-none text-xs text-neutral-600 dark:text-neutral-400 group"
+                title="Excludes non-core sections like lab experiments, learning outcomes, and grading schemes."
+              >
+                <input
+                  type="checkbox"
+                  checked={coreSyllabusOnly}
+                  onChange={(e) => setCoreSyllabusOnly(e.target.checked)}
+                  className="w-3.5 h-3.5 rounded border-neutral-300 dark:border-neutral-600 text-neutral-900 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-neutral-900 dark:accent-neutral-100"
+                />
+                <span className="font-normal text-neutral-700 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-neutral-100 transition-colors">
+                  Core Syllabus Only
+                </span>
+              </label>
+            </div>
 
             {/* Error Message Notice */}
             {errorMessage && (
@@ -451,7 +580,8 @@ export default function HomePage() {
                 <>
                   <Loader2 className="w-4 h-4 animate-spin text-white dark:text-neutral-950" />
                   <span>
-                    {statusMessage || "Processing syllabus..."} ({elapsedSeconds}s)
+                    {statusMessage || "Processing syllabus..."} (
+                    {elapsedSeconds}s)
                   </span>
                 </>
               ) : (
@@ -518,6 +648,15 @@ export default function HomePage() {
         onClose={() => setIsApiKeyModalOpen(false)}
         onKeyUpdated={(key) => setApiKey(key)}
       />
+
+      {/* Fullscreen loading overlay with shadow layering when opening or pasting syllabus */}
+      {isOpeningSyllabus && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 dark:bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-150">
+          <div className="flex flex-col items-center justify-center p-8 bg-white/95 dark:bg-[#1C1C1E]/95 rounded-3xl shadow-2xl border border-black/10 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/10">
+            <Loader2 className="w-12 h-12 animate-spin text-neutral-900 dark:text-neutral-100" />
+          </div>
+        </div>
+      )}
     </main>
   );
 }

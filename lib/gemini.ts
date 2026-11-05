@@ -6,5 +6,9 @@ export {
   formatSyllabusWithAI,
   generateNotesWithAI,
   generateSubCommentWithAI,
+  getSyllabusTreePrompt,
+  getNoteGenerationPrompt,
+  SYLLABUS_TREE_SYSTEM_PROMPT,
+  CORE_SYLLABUS_FILTER_RULE,
   testUniversalApiKey as testGeminiApiKey,
 } from "./ai";
