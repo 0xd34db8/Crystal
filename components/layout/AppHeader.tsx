@@ -30,7 +30,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
       {/* Left: Crystal Logo + Title/FileName */}
       <div className="flex items-center gap-2.5 sm:gap-4 min-w-0 flex-1 mr-2">
         <Link href="/" title="Crystal Home" className="flex items-center flex-shrink-0">
-          <CrystalLogo className="w-10 h-[38px] sm:w-14 sm:h-[53px] hover:opacity-90 transition-opacity cursor-pointer drop-shadow-xs" />
+          <CrystalLogo className="h-10 w-auto sm:h-[53px] hover:opacity-90 transition-opacity cursor-pointer drop-shadow-xs" />
         </Link>
 
         {titleElement ? (

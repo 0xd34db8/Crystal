@@ -12,7 +12,8 @@ export const metadata: Metadata = {
   title: "Crystal",
   description: "AI-powered syllabus organizer",
   icons: {
-    icon: "/logo.svg",
+    icon: "/icon.png",
+    apple: "/icon.png",
   },
 };
 

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/logo.svg" width="76" height="72" alt="Crystal Logo" />
+  <img src="public/logo.png" width="76" height="96" alt="Crystal Logo" />
 </p>
 
 <h1 align="center">Crystal</h1>
@@ -245,7 +245,7 @@ Crystal/
 │       └── page.tsx             # Main study workspace: tree view and note editor
 ├── components/
 │   ├── ApiKeyModal.tsx          # Multi-provider credential configuration modal
-│   ├── CrystalLogo.tsx          # SVG vector logo component
+│   ├── CrystalLogo.tsx          # Brand logo component
 │   ├── MarkdownRenderer.tsx     # Markdown display engine
 │   ├── NoteEditor.tsx           # TipTap rich markdown editor with unified split buttons
 │   ├── ResizableImage.tsx       # Resizable inline image node view for TipTap
