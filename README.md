@@ -189,8 +189,8 @@ The interactive status indicator chip in the workspace footer displays the real-
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/your-username/theseus.git
-   cd theseus
+   git clone https://github.com/0xd34db8/Theseus.git
+   cd Theseus
    ```
 
 2. Install dependencies:

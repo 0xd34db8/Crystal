@@ -15,8 +15,6 @@ import {
 } from "@/lib/ai";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import TaskList from "@tiptap/extension-task-list";
-import TaskItem from "@tiptap/extension-task-item";
 import TextAlign from "@tiptap/extension-text-align";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -40,6 +38,13 @@ import {
   CustomUnderline,
   CustomHighlight,
   CustomShortcuts,
+  CustomTaskList,
+  CustomTaskItem,
+  Table,
+  TableRow,
+  TableHeader,
+  TableCell,
+  MathNode,
   getEditorMarkdown,
 } from "./extensions";
 import { EditorToolbar } from "./EditorToolbar";
@@ -141,7 +146,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
     extensions: [
       StarterKit.configure({
         heading: {
-          levels: [1, 2, 3],
+          levels: [1, 2, 3, 4, 5, 6],
         },
         bulletList: {
           keepMarks: true,
@@ -153,10 +158,20 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
         },
       }),
       CustomUnderline,
-      TaskList,
-      TaskItem.configure({
+      CustomTaskList,
+      CustomTaskItem.configure({
         nested: true,
       }),
+      Table.configure({
+        resizable: true,
+        HTMLAttributes: {
+          class: "theseus-editor-table",
+        },
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
+      MathNode,
       CustomHighlight.configure({
         multicolor: false,
       }),
@@ -180,6 +195,8 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
         html: true,
         tightLists: true,
         bulletListMarker: "-",
+        transformPastedText: true,
+        transformCopiedText: true,
       }),
     ],
     content: selectedTopic?.note?.content || "",

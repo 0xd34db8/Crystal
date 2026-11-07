@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
 import "./globals.css";
+import "katex/dist/katex.min.css";
 import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme";
 
 const manrope = Manrope({

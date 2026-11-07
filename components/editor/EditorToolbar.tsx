@@ -21,6 +21,8 @@ import {
   AlignRight,
   AlignJustify,
   Minus,
+  Table as TableIcon,
+  Sigma,
   RemoveFormatting,
 } from "lucide-react";
 
@@ -97,7 +99,13 @@ export function EditorToolbar({
               ? "2"
               : editor.isActive("heading", { level: 3 })
                 ? "3"
-                : "p"
+                : editor.isActive("heading", { level: 4 })
+                  ? "4"
+                  : editor.isActive("heading", { level: 5 })
+                    ? "5"
+                    : editor.isActive("heading", { level: 6 })
+                      ? "6"
+                      : "p"
         }
         onChange={(e) => {
           const val = e.target.value;
@@ -107,7 +115,9 @@ export function EditorToolbar({
             editor
               .chain()
               .focus()
-              .toggleHeading({ level: parseInt(val, 10) as 1 | 2 | 3 })
+              .toggleHeading({
+                level: parseInt(val, 10) as 1 | 2 | 3 | 4 | 5 | 6,
+              })
               .run();
           }
         }}
@@ -120,6 +130,9 @@ export function EditorToolbar({
         <option value="1">Heading 1</option>
         <option value="2">Heading 2</option>
         <option value="3">Heading 3</option>
+        <option value="4">Heading 4</option>
+        <option value="5">Heading 5</option>
+        <option value="6">Heading 6</option>
       </select>
 
       <div className={dividerClass} />
@@ -236,6 +249,37 @@ export function EditorToolbar({
         title="Horizontal Divider"
       >
         <Minus className={iconClass} />
+      </button>
+      <button
+        type="button"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() =>
+          (editor.chain().focus() as any)
+            .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+            .run()
+        }
+        className={btnClass(editor.isActive("table"))}
+        title="Insert Table (3x3)"
+      >
+        <TableIcon className={iconClass} />
+      </button>
+      <button
+        type="button"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() =>
+          editor
+            .chain()
+            .focus()
+            .insertContent({
+              type: "mathNode",
+              attrs: { latex: "E = mc^2", display: "no" },
+            })
+            .run()
+        }
+        className={btnClass(editor.isActive("mathNode"))}
+        title="Insert LaTeX Formula"
+      >
+        <Sigma className={iconClass} />
       </button>
 
       <div className={dividerClass} />
