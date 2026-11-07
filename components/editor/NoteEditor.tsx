@@ -45,6 +45,11 @@ import {
   TableHeader,
   TableCell,
   MathNode,
+  Superscript,
+  DefinitionList,
+  DefinitionTerm,
+  DefinitionDescription,
+  MarkdownPlugins,
   getEditorMarkdown,
 } from "./extensions";
 import { EditorToolbar } from "./EditorToolbar";
@@ -172,6 +177,11 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       TableHeader,
       TableCell,
       MathNode,
+      Superscript,
+      DefinitionList,
+      DefinitionTerm,
+      DefinitionDescription,
+      MarkdownPlugins,
       CustomHighlight.configure({
         multicolor: false,
       }),

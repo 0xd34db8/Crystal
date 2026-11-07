@@ -348,6 +348,164 @@ body {
   border-left: 3px solid var(--border-subtle);
 }
 
+/* Links in TipTap & Prose */
+.ProseMirror a,
+.prose a {
+  color: #2563EB;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
+  cursor: pointer;
+  transition: color 0.15s ease, opacity 0.15s ease;
+}
+
+.ProseMirror a:hover,
+.prose a:hover {
+  opacity: 0.8;
+}
+
+/* Dark mode and dark themes for links - WCAG AAA compliant bright blue */
+.dark .ProseMirror a,
+.dark .prose a,
+[data-theme="dark"] .ProseMirror a,
+[data-theme="dark"] .prose a,
+[data-theme="midnight"] .ProseMirror a,
+[data-theme="midnight"] .prose a,
+[data-theme="nord"] .ProseMirror a,
+[data-theme="nord"] .prose a,
+[data-theme="forest"] .ProseMirror a,
+[data-theme="forest"] .prose a {
+  color: #60A5FA !important;
+}
+
+.dark .ProseMirror a:hover,
+.dark .prose a:hover,
+[data-theme="dark"] .ProseMirror a:hover,
+[data-theme="dark"] .prose a:hover,
+[data-theme="midnight"] .ProseMirror a:hover,
+[data-theme="midnight"] .prose a:hover,
+[data-theme="nord"] .ProseMirror a:hover,
+[data-theme="nord"] .prose a:hover,
+[data-theme="forest"] .ProseMirror a:hover,
+[data-theme="forest"] .prose a:hover {
+  color: #93C5FD !important;
+}
+
+/* Definition Lists (<dl>, <dt>, <dd>) */
+.ProseMirror dl,
+.theseus-definition-list {
+  margin: 1.25rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.ProseMirror dt,
+.theseus-definition-term {
+  font-weight: 600;
+  color: var(--foreground);
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+}
+
+.ProseMirror dt:first-child,
+.theseus-definition-term:first-child {
+  margin-top: 0;
+}
+
+.ProseMirror dd,
+.theseus-definition-desc {
+  margin-left: 1rem;
+  padding-left: 0.75rem;
+  border-left: 2px solid var(--border);
+  color: var(--foreground-subtle);
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* Footnotes */
+.ProseMirror sup.footnote-ref,
+.ProseMirror sup {
+  font-size: 0.75em;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+  top: -0.5em;
+  font-weight: 600;
+}
+
+.ProseMirror sup.footnote-ref a,
+.ProseMirror sup a {
+  color: #2563EB;
+  text-decoration: none;
+  padding: 0 0.15rem;
+}
+
+.dark .ProseMirror sup.footnote-ref a,
+.dark .ProseMirror sup a,
+[data-theme="dark"] .ProseMirror sup.footnote-ref a,
+[data-theme="dark"] .ProseMirror sup a,
+[data-theme="midnight"] .ProseMirror sup.footnote-ref a,
+[data-theme="midnight"] .ProseMirror sup a,
+[data-theme="nord"] .ProseMirror sup.footnote-ref a,
+[data-theme="nord"] .ProseMirror sup a,
+[data-theme="forest"] .ProseMirror sup.footnote-ref a,
+[data-theme="forest"] .ProseMirror sup a {
+  color: #60A5FA !important;
+}
+
+.ProseMirror sup.footnote-ref a:hover,
+.ProseMirror sup a:hover {
+  text-decoration: underline;
+}
+
+.ProseMirror hr.footnotes-sep {
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  border: none;
+  border-top: 1px dashed var(--border);
+}
+
+.ProseMirror .footnotes,
+.ProseMirror ol.footnotes-list {
+  font-size: 0.8125rem;
+  color: var(--foreground-subtle);
+  margin-top: 0.5rem;
+}
+
+.ProseMirror .footnotes-list {
+  padding-left: 1.25rem;
+}
+
+.ProseMirror .footnote-item {
+  margin-bottom: 0.35rem;
+}
+
+.ProseMirror .footnote-item p {
+  margin: 0.15rem 0;
+  display: inline;
+}
+
+.ProseMirror .footnote-backref {
+  color: #2563EB;
+  text-decoration: none;
+  margin-left: 0.35rem;
+  font-size: 0.85em;
+}
+
+.dark .ProseMirror .footnote-backref,
+[data-theme="dark"] .ProseMirror .footnote-backref,
+[data-theme="midnight"] .ProseMirror .footnote-backref,
+[data-theme="nord"] .ProseMirror .footnote-backref,
+[data-theme="forest"] .ProseMirror .footnote-backref {
+  color: #60A5FA !important;
+}
+
+.ProseMirror .footnote-backref:hover {
+  text-decoration: underline;
+}
+
 /* Horizontal rule divider */
 .ProseMirror hr {
   border: none;

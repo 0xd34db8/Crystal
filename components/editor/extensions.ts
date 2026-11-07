@@ -1,7 +1,8 @@
 import Image from "@tiptap/extension-image";
 import Underline from "@tiptap/extension-underline";
 import Highlight from "@tiptap/extension-highlight";
-import { Extension } from "@tiptap/core";
+import Superscript from "@tiptap/extension-superscript";
+import { Extension, Node as TiptapNode, mergeAttributes } from "@tiptap/core";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 import { ResizableImage } from "./ResizableImage";
 import StarterKit from "@tiptap/starter-kit";
@@ -16,8 +17,117 @@ import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import { Markdown } from "tiptap-markdown";
 import { MathNode } from "./MathNode";
+import markdownItFootnote from "markdown-it-footnote";
+// @ts-ignore
+import markdownItDeflist from "markdown-it-deflist";
 
-export { MathNode, Table, TableRow, TableHeader, TableCell };
+export { MathNode, Table, TableRow, TableHeader, TableCell, Superscript };
+
+/**
+ * Definition List nodes (<dl>, <dt>, <dd>)
+ */
+export const DefinitionList = TiptapNode.create({
+  name: "definitionList",
+  group: "block",
+  content: "(definitionTerm | definitionDescription)+",
+  parseHTML() {
+    return [{ tag: "dl" }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return [
+      "dl",
+      mergeAttributes(HTMLAttributes, { class: "theseus-definition-list" }),
+      0,
+    ];
+  },
+  addStorage() {
+    return {
+      markdown: {
+        serialize(state: any, node: any) {
+          state.renderContent(node);
+          state.write("\n");
+        },
+      },
+    };
+  },
+});
+
+export const DefinitionTerm = TiptapNode.create({
+  name: "definitionTerm",
+  content: "inline*",
+  defining: true,
+  parseHTML() {
+    return [{ tag: "dt" }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return [
+      "dt",
+      mergeAttributes(HTMLAttributes, { class: "theseus-definition-term" }),
+      0,
+    ];
+  },
+  addStorage() {
+    return {
+      markdown: {
+        serialize(state: any, node: any) {
+          state.renderInline(node);
+          state.write("\n");
+        },
+      },
+    };
+  },
+});
+
+export const DefinitionDescription = TiptapNode.create({
+  name: "definitionDescription",
+  content: "inline*",
+  defining: true,
+  parseHTML() {
+    return [
+      {
+        tag: "dd",
+        contentElement: (element) => element.querySelector("p") ?? element,
+      },
+    ];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return [
+      "dd",
+      mergeAttributes(HTMLAttributes, { class: "theseus-definition-desc" }),
+      0,
+    ];
+  },
+  addStorage() {
+    return {
+      markdown: {
+        serialize(state: any, node: any) {
+          state.write(": ");
+          state.renderInline(node);
+          state.write("\n\n");
+        },
+      },
+    };
+  },
+});
+
+/**
+ * Extension that hooks markdown-it plugins (footnotes, definition lists) into tiptap-markdown
+ */
+export const MarkdownPlugins = Extension.create({
+  name: "markdownPlugins",
+  addStorage() {
+    return {
+      markdown: {
+        parse: {
+          setup(md: any) {
+            md.use(markdownItFootnote);
+            md.use(markdownItDeflist);
+          },
+        },
+      },
+    };
+  },
+});
 
 /**
  * Custom TipTap TaskList extension with support for ChatGPT/GFM classes
@@ -294,6 +404,11 @@ export function createTipTapExtensions(options?: {
     TableHeader,
     TableCell,
     MathNode,
+    Superscript,
+    DefinitionList,
+    DefinitionTerm,
+    DefinitionDescription,
+    MarkdownPlugins,
     TextAlign.configure({
       types: ["heading", "paragraph"],
     }),
