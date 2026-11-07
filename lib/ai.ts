@@ -175,8 +175,8 @@ export async function callUniversalLLM(
 
   if (provider === "openrouter") {
     endpoint = "https://openrouter.ai/api/v1/chat/completions";
-    headers["HTTP-Referer"] = "https://crystal.app";
-    headers["X-Title"] = "Crystal";
+    headers["HTTP-Referer"] = "https://theseus.app";
+    headers["X-Title"] = "Theseus";
   } else if (provider === "groq") {
     endpoint = "https://api.groq.com/openai/v1/chat/completions";
   } else if (provider === "custom" && baseURL) {
@@ -281,7 +281,7 @@ export function normalizeItems(
   });
 }
 
-export const SYLLABUS_TREE_SYSTEM_PROMPT = `You are a curriculum parser for the Crystal study application.
+export const SYLLABUS_TREE_SYSTEM_PROMPT = `You are a curriculum parser for the Theseus study application.
 Transform messy or tabular syllabus content into a clean hierarchical tree.
 
 CRITICAL FORMATTING RULES:
@@ -314,7 +314,7 @@ export const CORE_SYLLABUS_FILTER_RULE = `CORE SYLLABUS ONLY RULE:
 
 /**
  * Generates a prompt for external LLM interfaces (ChatGPT, Claude, Gemini, etc.)
- * to format a syllabus into Crystal's JSON tree structure.
+ * to format a syllabus into Theseus's JSON tree structure.
  */
 export function getSyllabusTreePrompt(options?: {
   rawText?: string;
@@ -350,7 +350,7 @@ export function getNoteGenerationPrompt(options: {
     contextParts.push(`Course: "${options.courseTitle}"`);
   }
 
-  return `You are an academic study tutor for the Crystal app.
+  return `You are an academic study tutor for the Theseus app.
 Generate comprehensive study notes in GitHub-flavored Markdown for the given syllabus topic.
 
 ${contextParts.join("\n")}
@@ -448,7 +448,7 @@ export async function generateNotesWithAI(
   },
   configOrKey?: string | AIConfig,
 ): Promise<string> {
-  const systemPrompt = `You are an academic study tutor for the Crystal app.
+  const systemPrompt = `You are an academic study tutor for the Theseus app.
 Generate comprehensive study notes in GitHub-flavored Markdown for the given syllabus topic.
 
 Structure your notes clearly:

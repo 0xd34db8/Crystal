@@ -67,7 +67,7 @@ const config: Config = {
             border: "var(--status-untouched-border)",
           },
         },
-        crystal: {
+        theseus: {
           bg: "var(--background)",
           card: "var(--card)",
           border: "var(--border)",

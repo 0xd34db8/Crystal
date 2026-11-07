@@ -155,7 +155,7 @@ export const getEditorMarkdown = (editor: any): string => {
 };
 
 /**
- * Creates standard TipTap extensions for Crystal editors
+ * Creates standard TipTap extensions for Theseus editors
  */
 export function createTipTapExtensions(options?: {
   placeholder?: string;

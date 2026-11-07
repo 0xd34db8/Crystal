@@ -211,7 +211,7 @@ export default function EditPage() {
     };
   }, []);
 
-  // Ctrl + S (or Cmd + S) prompts to save / export as .crystal, not .html
+  // Ctrl + S (or Cmd + S) prompts to save / export as .theseus, not .html
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
@@ -521,7 +521,7 @@ export default function EditPage() {
             </button>
           </div>
 
-          {/* Right Side: Sub-sections Trigger Pill + Crystal label */}
+          {/* Right Side: Sub-sections Trigger Pill + Theseus label */}
           <div className="flex items-center gap-2.5">
             <button
               type="button"
@@ -565,7 +565,7 @@ export default function EditPage() {
             </button>
 
             <div className="text-[11px] text-muted-foreground font-light select-none hidden xs:block">
-              Crystal
+              Theseus
             </div>
           </div>
         </div>

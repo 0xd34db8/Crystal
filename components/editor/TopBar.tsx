@@ -157,16 +157,16 @@ export const TopBar: React.FC<TopBarProps> = ({
         </button>
       )}
 
-      {/* Export .crystal button */}
+      {/* Export .theseus button */}
       {onExport && (
         <button
           type="button"
           onClick={onExport}
-          title="Download as .crystal format (Ctrl+S)"
+          title="Download as .theseus format (Ctrl+S)"
           className="flex items-center gap-1.5 p-2 sm:px-3 sm:py-1.5 rounded-full border border-border bg-card hover:bg-subtle text-foreground-subtle text-xs font-normal shadow-2xs hover:border-border transition-all font-manrope cursor-pointer"
         >
           <Download className="w-3.5 h-3.5 text-foreground-subtle" />
-          <span className="hidden sm:inline">Export .crystal</span>
+          <span className="hidden sm:inline">Export .theseus</span>
         </button>
       )}
     </>

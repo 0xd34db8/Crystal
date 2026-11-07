@@ -231,7 +231,7 @@ export default function HomePage() {
 
     const cleanName = file.name.replace(/\.[^/.]+$/, "");
 
-    // Check if the uploaded file is JSON or .crystal format and open immediately
+    // Check if the uploaded file is JSON or .theseus format and open immediately
     try {
       const text = await file.text();
       const parsedSyllabus = tryParseSyllabusJson(
@@ -291,7 +291,7 @@ export default function HomePage() {
         if (activeTab === "file" && uploadedFile) {
           setStatusMessage("Reading file contents...");
           const processed = await processSyllabusFile(uploadedFile);
-          if (processed.isJsonOrCrystal && processed.jsonData) {
+          if (processed.isJsonOrTheseus && processed.jsonData) {
             resultSyllabus = {
               ...processed.jsonData,
               fileName: title,
@@ -322,7 +322,7 @@ export default function HomePage() {
           setStatusMessage("Reading file contents...");
           const processed = await processSyllabusFile(uploadedFile);
 
-          if (processed.isJsonOrCrystal && processed.jsonData) {
+          if (processed.isJsonOrTheseus && processed.jsonData) {
             resultSyllabus = {
               ...processed.jsonData,
               fileName: title,
@@ -518,7 +518,7 @@ export default function HomePage() {
               >
                 <input
                   type="file"
-                  accept=".pdf,.doc,.docx,.txt,.crystal,.json"
+                  accept=".pdf,.doc,.docx,.txt,.theseus,.json"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) handleSelectedFile(file);
@@ -538,7 +538,7 @@ export default function HomePage() {
                     : "Click or drag & drop syllabus file"}
                 </span>
                 <span className="text-[10px] text-muted-foreground mt-1">
-                  Supports PDF, Word (.docx), TXT, or .crystal (paste JSON
+                  Supports PDF, Word (.docx), TXT, or .theseus (paste JSON
                   anywhere to open)
                 </span>
               </label>

@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="public/logo.png" width="76" height="96" alt="Crystal Logo" />
+  <img src="public/logo.png" width="76" height="96" alt="Theseus Logo" />
 </p>
 
-<h1 align="center">Crystal</h1>
+<h1 align="center">Theseus</h1>
 
 <p align="center">
   Hierarchical syllabus organizer and note workspace.
@@ -24,7 +24,7 @@
   <a href="#progress-tracking">Progress Tracking</a> •
   <a href="#universal-llm-connectivity">LLM Integration</a> •
   <a href="#keyboard-shortcuts">Keyboard Shortcuts</a> •
-  <a href="#data-schema-crystal">Data Schema</a> •
+  <a href="#data-schema-theseus">Data Schema</a> •
   <a href="#project-structure">Project Structure</a>
 </p>
 
@@ -35,7 +35,7 @@
 ---
 
 > [!IMPORTANT]
-> **Client-Side & Model Agnostic**: Crystal operates entirely within the user's browser. API keys, course syllabi, and notes are stored locally in browser storage without third-party database dependencies. Users can connect any supported provider (Google Gemini, OpenAI, Anthropic Claude, OpenRouter, Groq, or custom OpenAI-compatible endpoints) or use the workflow completely offline.
+> **Client-Side & Model Agnostic**: Theseus operates entirely within the user's browser. API keys, course syllabi, and notes are stored locally in browser storage without third-party database dependencies. Users can connect any supported provider (Google Gemini, OpenAI, Anthropic Claude, OpenRouter, Groq, or custom OpenAI-compatible endpoints) or use the workflow completely offline.
 
 ---
 
@@ -43,7 +43,7 @@
 
 Academic curricula and course outlines are often distributed as unstructured PDF documents, Word tables, or dense syllabi. Extracting structured study paths and keeping organized, topic-specific notes across large modules is cumbersome with standard word processors.
 
-Crystal organizes curriculum documents into interactive, hierarchical study workspaces:
+Theseus organizes curriculum documents into interactive, hierarchical study workspaces:
 
 - Dedicated study note workspace for each syllabus topic.
 - TipTap-powered editor with bidirectional Markdown support:
@@ -60,7 +60,7 @@ Crystal organizes curriculum documents into interactive, hierarchical study work
 
 ## Core Workflow & Philosophy
 
-The foundational design of Crystal centers on a unified study workflow: **bringing the syllabus outline and note-taking into one cohesive workspace for organized, concise, at-a-glance information intake and retrieval**.
+The foundational design of Theseus centers on a unified study workflow: **bringing the syllabus outline and note-taking into one cohesive workspace for organized, concise, at-a-glance information intake and retrieval**.
 
 ### The Fragmentation Problem
 
@@ -73,7 +73,7 @@ This separation introduces continuous friction: learners lose context on which s
 
 ### The Solution
 
-Crystal eliminates this boundary by merging curriculum structure and topic notes into a single interface:
+Theseus eliminates this boundary by merging curriculum structure and topic notes into a single interface:
 
 1. **Unified Navigation & Scoped Workspace**:
    The syllabus tree functions as both the curriculum outline and the navigation index. Selecting any topic in the tree immediately opens its dedicated note pane side by side, ensuring notes are always anchored to their curriculum context.
@@ -82,10 +82,10 @@ Crystal eliminates this boundary by merging curriculum structure and topic notes
    Learners can assess their entire course standing in seconds. Dedicated note indicators show exactly which topics have attached study summaries, while color-coded completion chips (Done, Partially, Barely, Untouched) provide instant visibility into course mastery without opening individual documents.
 
 3. **Contextual Knowledge Chunking**:
-   Rather than allowing notes to accumulate into unstructured, monolithic files, Crystal encourages concise, topic-scoped documentation. Secondary details, problem sets, and derivations live in the topic's floating sub-sections drawer, keeping primary notes clean and high-yield.
+   Rather than allowing notes to accumulate into unstructured, monolithic files, Theseus encourages concise, topic-scoped documentation. Secondary details, problem sets, and derivations live in the topic's floating sub-sections drawer, keeping primary notes clean and high-yield.
 
 4. **Single Portable Workspace**:
-   The entire curriculum structure, progress metrics, topic notes, and supplementary comments persist together in a single `.crystal` file, providing a complete, self-contained study record that can be loaded or backed up at any time.
+   The entire curriculum structure, progress metrics, topic notes, and supplementary comments persist together in a single `.theseus` file, providing a complete, self-contained study record that can be loaded or backed up at any time.
 
 ---
 
@@ -93,9 +93,9 @@ Crystal eliminates this boundary by merging curriculum structure and topic notes
 
 ### Intelligent Syllabus Ingestion
 
-- Ingest course curricula from **PDF documents**, **Microsoft Word (`.docx`)**, **plain text (`.txt`)**, and native **`.crystal` / `.json`** files.
+- Ingest course curricula from **PDF documents**, **Microsoft Word (`.docx`)**, **plain text (`.txt`)**, and native **`.theseus` / `.json`** files.
 - **Core Syllabus Only Filter**: Toggleable parser directive that excludes non-syllabus material (e.g., lab experiments, learning outcomes, textbook citations, and grading matrices) to focus exclusively on conceptual coursework.
-- **Instant Homepage Paste**: Paste generated JSON or `.crystal` data anywhere on the homepage (`Cmd+V` / `Ctrl+V`) to automatically parse the tree and launch the workspace.
+- **Instant Homepage Paste**: Paste generated JSON or `.theseus` data anywhere on the homepage (`Cmd+V` / `Ctrl+V`) to automatically parse the tree and launch the workspace.
 
 ### Hierarchical Tree Viewer & Editor
 
@@ -151,7 +151,7 @@ Crystal eliminates this boundary by merging curriculum structure and topic notes
 
 ### Portable File Format & Recent Files
 
-- **Native `.crystal` Files**: Standardized JSON-based schema storing tree hierarchy, notes, sub-comments, and completion states.
+- **Native `.theseus` Files**: Standardized JSON-based schema storing tree hierarchy, notes, sub-comments, and completion states.
 - **Native File Dialog**: Integration with the browser File System Access API (`showSaveFilePicker`) for native save dialogs with automatic download fallback.
 - **Recent Files Dashboard**: Displays cached syllabi with real-time completion percentages and topic counts.
 - **Confirmation & Undo**: Delete confirmation dialog with an instant inline Undo action to restore accidentally removed syllabi.
@@ -189,8 +189,8 @@ The interactive status indicator chip in the workspace footer displays the real-
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/your-username/crystal.git
-   cd crystal
+   git clone https://github.com/your-username/theseus.git
+   cd theseus
    ```
 
 2. Install dependencies:
@@ -218,13 +218,13 @@ The interactive status indicator chip in the workspace footer displays the real-
 
 ### Quality Assurance with Husky
 
-Crystal includes a pre-commit hook via Husky that automatically executes `npm run typecheck && npm run build` before any commit is finalized, preventing broken import paths or type errors from reaching the repository.
+Theseus includes a pre-commit hook via Husky that automatically executes `npm run typecheck && npm run build` before any commit is finalized, preventing broken import paths or type errors from reaching the repository.
 
 ---
 
 ## Universal LLM Connectivity
 
-Crystal provides flexible AI options. Users can configure API credentials directly or use external web models without an API key:
+Theseus provides flexible AI options. Users can configure API credentials directly or use external web models without an API key:
 
 ### Option A: Direct API Configuration
 
@@ -240,10 +240,10 @@ Crystal provides flexible AI options. Users can configure API credentials direct
 
 ### Option B: External LLM Workflow (No API Key Required)
 
-1. On the Crystal homepage, click **Copy Tree Prompt** (or **Prompt**).
+1. On the Theseus homepage, click **Copy Tree Prompt** (or **Prompt**).
 2. Attach your syllabus document or paste the prompt into your external LLM of choice (ChatGPT, Claude, Gemini web interface).
 3. Copy the resulting JSON output from the LLM.
-4. Return to Crystal and press `Cmd+V` (macOS) or `Ctrl+V` (Windows/Linux) anywhere on the homepage. Crystal will detect, parse, and open your syllabus immediately.
+4. Return to Theseus and press `Cmd+V` (macOS) or `Ctrl+V` (Windows/Linux) anywhere on the homepage. Theseus will detect, parse, and open your syllabus immediately.
 
 ---
 
@@ -252,7 +252,7 @@ Crystal provides flexible AI options. Users can configure API credentials direct
 | Shortcut           | Context            | Action                                                     |
 | :----------------- | :----------------- | :--------------------------------------------------------- |
 | `Cmd+V` / `Ctrl+V` | Homepage           | Instantly parse clipboard syllabus JSON and open workspace |
-| `Cmd+S` / `Ctrl+S` | Workspace          | Export current syllabus as native `.crystal` file          |
+| `Cmd+S` / `Ctrl+S` | Workspace          | Export current syllabus as native `.theseus` file          |
 | `Cmd+Z` / `Ctrl+Z` | Syllabus Tree      | Undo structural tree change (preserves note content)       |
 | `Cmd+Y` / `Ctrl+Y` | Syllabus Tree      | Redo structural tree change (preserves note content)       |
 | `Ctrl+Enter`       | JSON Tree Editor   | Parse JSON and return to visual tree                       |
@@ -273,9 +273,9 @@ Crystal provides flexible AI options. Users can configure API credentials direct
 
 ---
 
-## Data Schema (.crystal)
+## Data Schema (.theseus)
 
-Files exported with the `.crystal` extension use standardized JSON preserving tree hierarchy, notes, sub-comments, and completion statuses:
+Files exported with the `.theseus` extension use standardized JSON preserving tree hierarchy, notes, sub-comments, and completion statuses:
 
 ```json
 {
@@ -322,7 +322,7 @@ Files exported with the `.crystal` extension use standardized JSON preserving tr
 ## Project Structure
 
 ```text
-Crystal/
+Theseus/
 ├── .husky/                      # Git pre-commit verification hooks
 ├── app/
 │   ├── globals.css              # Semantic CSS design tokens and Tailwind directives
@@ -353,7 +353,7 @@ Crystal/
 │   ├── fileUtils.ts             # PDF, Word (.docx), and text document extractors
 │   ├── parser.ts                # JSON sanitizer, structure validator, fallback parser
 │   ├── storage.ts               # Local browser storage drivers for syllabi & config
-│   ├── syllabusUtils.ts         # Tree traversal, stats calculation, and .crystal export
+│   ├── syllabusUtils.ts         # Tree traversal, stats calculation, and .theseus export
 │   └── theme.ts                 # Theme bootstrap script and storage observer
 ├── public/                      # Static branding assets and icons
 └── types/

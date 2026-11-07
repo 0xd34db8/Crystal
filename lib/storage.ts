@@ -4,10 +4,10 @@ import { LLMProvider, AIConfig } from "@/types/ai";
 
 export type { LLMProvider, AIConfig };
 
-const STORAGE_KEY = "crystal_syllabi_v1";
-const ACTIVE_ID_KEY = "crystal_active_syllabus_id";
-const API_KEY_STORAGE = "crystal_api_key";
-const AI_CONFIG_STORAGE = "crystal_ai_config";
+const STORAGE_KEY = "theseus_syllabi_v1";
+const ACTIVE_ID_KEY = "theseus_active_syllabus_id";
+const API_KEY_STORAGE = "theseus_api_key";
+const AI_CONFIG_STORAGE = "theseus_ai_config";
 
 export function detectProviderFromKey(key: string): LLMProvider {
   const trimmed = key.trim();

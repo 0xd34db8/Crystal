@@ -148,7 +148,7 @@ function sanitizeJsonCandidate(str: string): string {
 }
 
 /**
- * Tries to parse generated LLM JSON or .crystal JSON from raw text or markdown code blocks.
+ * Tries to parse generated LLM JSON or .theseus JSON from raw text or markdown code blocks.
  * Returns a valid SyllabusData object, or null if the content is not syllabus JSON.
  */
 export function tryParseSyllabusJson(

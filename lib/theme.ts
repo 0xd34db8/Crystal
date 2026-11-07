@@ -3,7 +3,7 @@
  * Consumed by the root layout (pre-hydration script), the `useTheme` hook and the theme picker UI.
  */
 
-export const THEME_STORAGE_KEY = "crystal_theme";
+export const THEME_STORAGE_KEY = "theseus_theme";
 
 export const THEMES = [
   { id: "system", name: "System", description: "Follows OS preference", dark: false, swatch: ["#9CA3AF", "#0066FF"] },

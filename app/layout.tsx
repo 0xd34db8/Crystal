@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
 import "./globals.css";
 import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme";
@@ -10,7 +10,7 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "Crystal",
+  title: "Theseus",
   description: "AI-powered syllabus organizer",
   icons: {
     icon: "/icon.png",

@@ -192,7 +192,7 @@ export function addItemToTree(
 }
 
 /**
- * Exports syllabus data to a local .crystal file.
+ * Exports syllabus data to a local .theseus file.
  * Uses native showSaveFilePicker dialog when available to prompt user,
  * and falls back to browser file download.
  */
@@ -205,7 +205,7 @@ export async function exportSyllabusAsFile(
     .trim()
     .replace(/[^a-zA-Z0-9_\-\s]/g, "")
     .replace(/\s+/g, "_");
-  const fileName = `${safeTitle}.crystal`;
+  const fileName = `${safeTitle}.theseus`;
   const dataStr = JSON.stringify(syllabus, null, 2);
 
   // Modern browser File System Access API: prompts native Save File dialog
@@ -215,9 +215,9 @@ export async function exportSyllabusAsFile(
         suggestedName: fileName,
         types: [
           {
-            description: "Crystal Syllabus File (*.crystal)",
+            description: "Theseus Syllabus File (*.theseus)",
             accept: {
-              "application/json": [".crystal", ".json"],
+              "application/json": [".theseus", ".json"],
             },
           },
         ],

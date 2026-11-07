@@ -3,26 +3,29 @@ import mammoth from "mammoth";
 export interface ProcessedFileInput {
   text?: string;
   pdfBase64?: string;
-  isJsonOrCrystal?: boolean;
+  isJsonOrTheseus?: boolean;
   jsonData?: any;
 }
 
 /**
  * Reads and extracts text or binary data from supported syllabus file formats
- * (PDF, Word .docx, TXT, JSON, .crystal)
+ * (PDF, Word .docx, TXT, JSON, .theseus)
  */
 export async function processSyllabusFile(
   file: File,
 ): Promise<ProcessedFileInput> {
   const name = file.name.toLowerCase();
 
-  // 1. Crystal or JSON syllabus format
-  if (name.endsWith(".crystal") || name.endsWith(".json")) {
+  // 1. Theseus or JSON syllabus format
+  if (name.endsWith(".theseus") || name.endsWith(".json")) {
     const text = await file.text();
     try {
       const parsed = JSON.parse(text);
       if (parsed.items) {
-        return { isJsonOrCrystal: true, jsonData: parsed };
+        return {
+          isJsonOrTheseus: true,
+          jsonData: parsed,
+        };
       }
     } catch {
       return { text };
@@ -68,7 +71,7 @@ export async function processSyllabusFile(
     return { text };
   } catch {
     throw new Error(
-      "Unsupported file format. Please upload a PDF, Word (.docx), TXT, or .crystal file.",
+      "Unsupported file format. Please upload a PDF, Word (.docx), TXT, or .theseus file.",
     );
   }
 }
