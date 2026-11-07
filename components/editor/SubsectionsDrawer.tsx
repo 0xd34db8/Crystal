@@ -257,7 +257,6 @@ export const SubsectionsDrawer: React.FC<SubsectionsDrawerProps> = ({
       <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0 bg-subtle">
         {subComments.length === 0 && !isAdding && (
           <div className="h-full flex flex-col items-center justify-center p-6 text-center text-muted-foreground select-none">
-            <div className="w-10 h-10 rounded-full bg-card flex items-center justify-center mb-2.5 text-muted-foreground"></div>
             <p className="text-xs font-medium text-foreground mb-1">
               No sub-sections yet
             </p>

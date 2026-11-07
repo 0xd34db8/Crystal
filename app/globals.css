@@ -243,6 +243,23 @@ body {
 /* ==========================================================================
    TIPTAP PROSEMIRROR EDITOR STYLING
    ========================================================================== */
+/* Reading Mode Typography & Canvas */
+.theseus-reading-mode {
+  user-select: text;
+}
+
+.theseus-reading-mode .ProseMirror {
+  cursor: default;
+}
+
+.theseus-reading-mode .ProseMirror p {
+  line-height: 1.75;
+}
+
+.theseus-reading-mode .ProseMirror a {
+  cursor: pointer;
+}
+
 .ProseMirror {
   outline: none;
   min-height: 320px;

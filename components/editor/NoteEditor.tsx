@@ -9,10 +9,7 @@ import {
 } from "@/types/syllabus";
 import { ApiKeyModal } from "@/components/modals/ApiKeyModal";
 import { getApiKey } from "@/lib/storage";
-import {
-  generateNotesWithAI,
-  getNoteGenerationPrompt,
-} from "@/lib/ai";
+import { generateNotesWithAI, getNoteGenerationPrompt } from "@/lib/ai";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import TextAlign from "@tiptap/extension-text-align";
@@ -32,6 +29,8 @@ import {
   Maximize2,
   Minimize2,
   ImageIcon,
+  BookOpen,
+  ChevronDown,
 } from "lucide-react";
 import {
   CustomImage,
@@ -78,7 +77,8 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   isActive = false,
 }) => {
   const [content, setContent] = useState<string>("");
-  const [hasCopiedNotePrompt, setHasCopiedNotePrompt] = useState<boolean>(false);
+  const [hasCopiedNotePrompt, setHasCopiedNotePrompt] =
+    useState<boolean>(false);
 
   // Topic Inline Renaming
   const [isEditingTitle, setIsEditingTitle] = useState<boolean>(false);
@@ -88,14 +88,20 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   // Notion-style Image URL Embed Pill
   const [pendingEmbedUrl, setPendingEmbedUrl] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [isReadingMode, setIsReadingMode] = useState<boolean>(false);
 
   // Fullscreen toggle & Escape key listener
   const toggleFullscreen = () => {
     setIsFullscreen((prev) => !prev);
   };
 
+  const toggleReadingMode = () => {
+    setIsReadingMode((prev) => !prev);
+  };
+
   const handleClose = () => {
     setIsFullscreen(false);
+    setIsReadingMode(false);
     onClose();
   };
 
@@ -280,6 +286,12 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       debounceSave(markdown);
     },
   });
+
+  // Synchronize reading mode with TipTap editable state
+  useEffect(() => {
+    if (!editor) return;
+    editor.setEditable(!isReadingMode);
+  }, [isReadingMode, editor]);
 
   // Handle editor-scoped Undo/Redo shortcuts when this panel is active/highlighted
   useEffect(() => {
@@ -569,7 +581,11 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                   type="button"
                   onClick={handleCopyNotePrompt}
                   className="inline-flex items-center justify-center px-3 py-2 hover:bg-black/10 transition-colors cursor-pointer"
-                  title={hasCopiedNotePrompt ? "Prompt Copied" : "Copy note prompt for external LLM"}
+                  title={
+                    hasCopiedNotePrompt
+                      ? "Prompt Copied"
+                      : "Copy note prompt for external LLM"
+                  }
                 >
                   {hasCopiedNotePrompt ? (
                     <Check className="w-3.5 h-3.5 text-white" />
@@ -621,7 +637,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       {/* Top Header: Centered Clickable / Inline Editable Topic Title */}
       <div className="relative pt-4 sm:pt-5 pb-3 sm:pb-4 px-3 sm:px-6 md:px-8 border-b border-border-subtle flex items-center justify-between gap-2">
         {/* Left: Mobile Back Button + Status Selector Pill */}
-        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 z-10">
+        <div className="flex items-center  sm:gap-2 min-w-0 z-10">
           {onBackToTree && (
             <button
               type="button"
@@ -630,33 +646,38 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
               title="Back to Topics"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span className="hidden xs:inline text-[11px] font-medium">Tree</span>
+              <span className="hidden xs:inline text-[11px] font-medium">
+                Tree
+              </span>
             </button>
           )}
 
           <span className="hidden sm:inline text-[11px] text-muted-foreground uppercase tracking-wider font-medium">
             Status:
           </span>
-          <select
-            value={selectedTopic.status}
-            onChange={(e) =>
-              onUpdateStatus(selectedTopic.id, e.target.value as TopicStatus)
-            }
-            className={`text-xs font-medium py-1 px-2 sm:px-2.5 rounded-full border outline-none cursor-pointer transition-colors ${
-              selectedTopic.status === "done"
-                ? "bg-status-done-bg border-status-done-border text-status-done-fg"
-                : selectedTopic.status === "partial"
-                  ? "bg-status-partial-bg border-status-partial-border text-status-partial-fg"
-                  : selectedTopic.status === "barely"
-                    ? "bg-status-barely-bg border-status-barely-border text-status-barely-fg"
-                    : "bg-subtle border-border text-foreground-subtle"
-            }`}
-          >
-            <option value="untouched">Untouched</option>
-            <option value="barely">Barely</option>
-            <option value="partial">Partially</option>
-            <option value="done">Done</option>
-          </select>
+          <div className="relative inline-flex items-center">
+            <select
+              value={selectedTopic.status}
+              onChange={(e) =>
+                onUpdateStatus(selectedTopic.id, e.target.value as TopicStatus)
+              }
+              className={`appearance-none text-xs font-medium py-1 pl-2.5 pr-5 rounded-full border outline-none cursor-pointer transition-colors ${
+                selectedTopic.status === "done"
+                  ? "bg-status-done-bg border-status-done-border text-status-done-fg"
+                  : selectedTopic.status === "partial"
+                    ? "bg-status-partial-bg border-status-partial-border text-status-partial-fg"
+                    : selectedTopic.status === "barely"
+                      ? "bg-status-barely-bg border-status-barely-border text-status-barely-fg"
+                      : "bg-subtle border-border text-foreground-subtle"
+              }`}
+            >
+              <option value="untouched">Untouched</option>
+              <option value="barely">Barely</option>
+              <option value="partial">Partially</option>
+              <option value="done">Done</option>
+            </select>
+            <ChevronDown className="w-3 h-3 absolute right-1.5 pointer-events-none opacity-60 text-current shrink-0" />
+          </div>
         </div>
 
         {/* Centered Topic Title: Click to Rename inline */}
@@ -680,7 +701,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             />
           </div>
         ) : (
-          <div className="absolute left-1/2 -translate-x-1/2 max-w-[42%] xs:max-w-[48%] sm:max-w-[50%] flex items-center justify-center">
+          <div className="absolute left-1/2 -translate-x-1/2 max-w-[36%] xs:max-w-[42%] sm:max-w-[50%] flex items-center justify-center">
             <button
               type="button"
               onClick={() => {
@@ -698,45 +719,67 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           </div>
         )}
 
-        {/* Right Actions: AI Notes + Copy Prompt Button & Close */}
-        <div className="flex items-center gap-2 sm:gap-3 z-10">
-          <div className="inline-flex items-center rounded-full bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-2xs hover:shadow-xs transition-all overflow-hidden text-xs font-medium">
-            <button
-              type="button"
-              onClick={handleAiGenerateNotes}
-              disabled={isAiGenerating}
-              className="flex items-center gap-1.5 pl-3 pr-2.5 py-1 hover:bg-black/10 transition-colors cursor-pointer disabled:opacity-50"
-              title="Generate comprehensive study notes with AI"
-            >
-              {isAiGenerating ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
-                  <span className="hidden xs:inline">Generating...</span>
-                </>
-              ) : (
-                <span>AI Notes</span>
-              )}
-            </button>
-            <div className="w-px h-3.5 bg-white/25" />
-            <button
-              type="button"
-              onClick={handleCopyNotePrompt}
-              className="flex items-center justify-center px-2 py-1 hover:bg-black/10 transition-colors cursor-pointer"
-              title={hasCopiedNotePrompt ? "Prompt Copied" : "Copy study note prompt"}
-            >
-              {hasCopiedNotePrompt ? (
-                <Check className="w-3.5 h-3.5 text-white" />
-              ) : (
-                <Copy className="w-3.5 h-3.5 text-white" />
-              )}
-            </button>
-          </div>
+        {/* Right Actions: AI Notes + Reading Mode + Fullscreen & Close */}
+        <div className="flex items-center gap-1.5 sm:gap-2 z-10 shrink-0">
+          {/* AI Notes Button: Hidden in Reading Mode */}
+          {!isReadingMode && (
+            <div className="inline-flex items-center rounded-full bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-2xs hover:shadow-xs transition-all overflow-hidden text-xs font-medium whitespace-nowrap shrink-0">
+              <button
+                type="button"
+                onClick={handleAiGenerateNotes}
+                disabled={isAiGenerating}
+                className="flex items-center gap-1.5 pl-3 pr-2.5 py-1 hover:bg-black/10 transition-colors cursor-pointer disabled:opacity-50 whitespace-nowrap"
+                title="Generate comprehensive study notes with AI"
+              >
+                {isAiGenerating ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-white shrink-0" />
+                    <span className="hidden xs:inline">Generating...</span>
+                  </>
+                ) : (
+                  <span className="whitespace-nowrap">AI Notes</span>
+                )}
+              </button>
+              <div className="w-px h-3.5 bg-white/25 shrink-0" />
+              <button
+                type="button"
+                onClick={handleCopyNotePrompt}
+                className="flex items-center justify-center px-2 py-1 hover:bg-black/10 transition-colors cursor-pointer shrink-0"
+                title={
+                  hasCopiedNotePrompt
+                    ? "Prompt Copied"
+                    : "Copy study note prompt"
+                }
+              >
+                {hasCopiedNotePrompt ? (
+                  <Check className="w-3.5 h-3.5 text-white" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5 text-white" />
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* Reading Mode Toggle Button */}
+          <button
+            type="button"
+            onClick={toggleReadingMode}
+            className={`w-7 h-7 flex items-center justify-center rounded-full transition-colors cursor-pointer shrink-0 ${
+              isReadingMode
+                ? "bg-accent/20 text-accent hover:bg-accent/30"
+                : "text-muted-foreground hover:text-foreground hover:bg-subtle"
+            }`}
+            title={isReadingMode ? "Exit reading mode" : "Reading mode"}
+            aria-label={isReadingMode ? "Exit reading mode" : "Reading mode"}
+          >
+            <BookOpen className="w-4 h-4" />
+          </button>
 
           {/* Fullscreen Toggle Button */}
           <button
             type="button"
             onClick={toggleFullscreen}
-            className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-subtle text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-subtle text-muted-foreground hover:text-foreground transition-colors cursor-pointer shrink-0"
             title={isFullscreen ? "Exit Fullscreen (Esc)" : "Fullscreen"}
             aria-label={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
           >
@@ -747,10 +790,11 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             )}
           </button>
 
+          {/* Close Note Button */}
           <button
             type="button"
             onClick={handleClose}
-            className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-subtle text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-subtle text-muted-foreground hover:text-foreground transition-colors cursor-pointer shrink-0"
             title="Close Note"
           >
             <X className="w-4 h-4" />
@@ -759,10 +803,15 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       </div>
 
       {/* Formatting Toolbar */}
-      <EditorToolbar editor={editor} className="border-b border-border-subtle" />
+      {!isReadingMode && (
+        <EditorToolbar
+          editor={editor}
+          className="border-b border-border-subtle"
+        />
+      )}
 
       {/* Notion-style Floating Contextual Action for Pasted Image URLs */}
-      {pendingEmbedUrl && (
+      {!isReadingMode && pendingEmbedUrl && (
         <div className="mx-3 sm:mx-6 md:mx-8 my-2 p-2 sm:p-2.5 rounded-xl bg-accent-subtle border border-accent/30 flex items-center justify-between text-xs animate-in fade-in slide-in-from-top-1">
           <div className="flex items-center gap-2 min-w-0">
             <ImageIcon className="w-4 h-4 text-blue-500 flex-shrink-0" />
@@ -808,16 +857,42 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
         </div>
       )}
 
-      {/* Main Notion-Style Live Markdown Editing Canvas */}
+      {/* Main Notion-Style Live Markdown Editing / Reading Canvas */}
       <div
-        className="flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 py-4 sm:py-6 min-h-0 cursor-text"
-        onClick={() => {
+        className={`flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 py-4 sm:py-6 min-h-0 ${
+          isReadingMode ? "cursor-default theseus-reading-mode" : "cursor-text"
+        }`}
+        onClick={(e) => {
+          if (isReadingMode) {
+            const target = (e.target as HTMLElement).closest("a");
+            if (target && target.href) {
+              const href = target.getAttribute("href");
+              if (href?.startsWith("#")) {
+                const id = href.slice(1);
+                const el = document.getElementById(id);
+                if (el) {
+                  el.scrollIntoView({ behavior: "smooth" });
+                }
+              } else {
+                window.open(target.href, "_blank", "noopener,noreferrer");
+              }
+            }
+            return;
+          }
           if (editor && !editor.isFocused) {
             editor.commands.focus();
           }
         }}
       >
-        <div className={isFullscreen ? "max-w-4xl mx-auto w-full" : "w-full"}>
+        <div
+          className={
+            isReadingMode
+              ? "max-w-3xl mx-auto w-full py-2 sm:py-4"
+              : isFullscreen
+                ? "max-w-4xl mx-auto w-full"
+                : "w-full"
+          }
+        >
           <EditorContent editor={editor} />
         </div>
       </div>
