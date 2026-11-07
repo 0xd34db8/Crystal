@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { TopBar } from "@/components/editor/TopBar";
 import { SyllabusTree } from "@/components/editor/SyllabusTree";
 import { NoteEditor } from "@/components/editor/NoteEditor";
@@ -34,7 +34,15 @@ import {
 export default function EditPage() {
   const [syllabus, setSyllabus] = useState<SyllabusData>(initialSyllabusData);
   const [selectedTopicId, setSelectedTopicId] = useState<string>("");
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [editorSearchQuery, setEditorSearchQuery] = useState<string>("");
+  const [searchMatchInfo, setSearchMatchInfo] = useState<{
+    current: number;
+    total: number;
+  } | null>(null);
+  const searchActionsRef = useRef<{
+    findNext: () => void;
+    findPrev: () => void;
+  } | null>(null);
   const [apiKey, setApiKey] = useState<string>("");
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState<boolean>(false);
   const [mobileTab, setMobileTab] = useState<"tree" | "editor">("tree");
@@ -146,6 +154,48 @@ export default function EditPage() {
   // Keyboard shortcut listener: strictly respects whichever panel is clicked/active
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+F / Cmd+F: routes to the search bar of whichever pane is highlighted/active
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const target = e.target as HTMLElement | null;
+        const isInsideTree = Boolean(
+          target && target.closest("[data-tree-pane]"),
+        );
+        const isInsideEditor = Boolean(
+          target &&
+            (target.closest("[data-editor-pane]") ||
+              target.isContentEditable ||
+              target.closest(".ProseMirror")),
+        );
+
+        const targetPanel = isInsideTree
+          ? "tree"
+          : isInsideEditor
+            ? "editor"
+            : activePanel;
+
+        if (targetPanel === "tree") {
+          const treeInput = document.querySelector<HTMLInputElement>(
+            '[data-tree-search-input="true"]',
+          );
+          if (treeInput) {
+            treeInput.focus();
+            treeInput.select();
+          }
+        } else {
+          const editorInput = document.querySelector<HTMLInputElement>(
+            '[data-editor-search-input="true"]',
+          );
+          if (editorInput) {
+            editorInput.focus();
+            editorInput.select();
+          }
+        }
+        return;
+      }
+
       const isUndo =
         (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey;
       const isRedo =
@@ -393,8 +443,12 @@ export default function EditPage() {
       <TopBar
         fileName={syllabus.fileName}
         onFileNameChange={handleFileNameChange}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+        searchQuery={editorSearchQuery}
+        onSearchChange={setEditorSearchQuery}
+        searchPlaceholder="Search in note..."
+        searchMatchInfo={searchMatchInfo}
+        onFindNext={() => searchActionsRef.current?.findNext()}
+        onFindPrev={() => searchActionsRef.current?.findPrev()}
         onExport={handleExport}
         onApiKeyClick={() => setIsApiKeyModalOpen(true)}
         apiKeyConfigured={Boolean(apiKey)}
@@ -431,7 +485,6 @@ export default function EditPage() {
             onRenameTopic={handleRenameTopic}
             onToggleNote={handleToggleNote}
             onUpdateItems={handleUpdateItems}
-            searchQuery={searchQuery}
             canUndo={historyPast.length > 0}
             canRedo={historyFuture.length > 0}
             onUndo={handleTreeUndo}
@@ -465,6 +518,11 @@ export default function EditPage() {
             onRenameTopic={handleRenameTopic}
             onBackToTree={() => setMobileTab("tree")}
             isActive={activePanel === "editor"}
+            searchQuery={editorSearchQuery}
+            onSearchMatchChange={setSearchMatchInfo}
+            onRegisterSearchActions={(actions) => {
+              searchActionsRef.current = actions;
+            }}
           />
         </div>
       </div>

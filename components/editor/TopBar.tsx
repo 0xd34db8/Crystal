@@ -3,13 +3,17 @@
 import React, { useState } from "react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { Search, Download, Key, X } from "lucide-react";
+import { Search, Download, Key, X, ChevronUp, ChevronDown } from "lucide-react";
 
 interface TopBarProps {
   fileName: string;
   onFileNameChange: (name: string) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  searchPlaceholder?: string;
+  searchMatchInfo?: { current: number; total: number } | null;
+  onFindNext?: () => void;
+  onFindPrev?: () => void;
   onExport?: () => void;
   onApiKeyClick?: () => void;
   apiKeyConfigured?: boolean;
@@ -23,6 +27,10 @@ export const TopBar: React.FC<TopBarProps> = ({
   onFileNameChange,
   searchQuery,
   onSearchChange,
+  searchPlaceholder = "Search in note...",
+  searchMatchInfo,
+  onFindNext,
+  onFindPrev,
   onExport,
   onApiKeyClick,
   apiKeyConfigured,
@@ -59,13 +67,42 @@ export const TopBar: React.FC<TopBarProps> = ({
         <div className="relative flex-1 flex items-center mr-2">
           <Search className="absolute left-3 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
           <input
+            data-editor-search-input="true"
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search syllabus topics..."
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                if (e.shiftKey) onFindPrev?.();
+                else onFindNext?.();
+              } else if (e.key === "Escape") {
+                setIsMobileSearchOpen(false);
+                onSearchChange("");
+              }
+            }}
+            placeholder={searchPlaceholder}
             autoFocus
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-card border border-border rounded-full outline-none focus:border-accent font-manrope text-foreground placeholder-muted-foreground"
+            className="w-full pl-8 pr-16 py-1.5 text-xs bg-card border border-border rounded-full outline-none focus:border-accent font-manrope text-foreground placeholder-muted-foreground"
           />
+          {searchQuery && (
+            <div className="absolute right-2 flex items-center gap-1">
+              {searchMatchInfo && (
+                <span className="text-[10px] text-muted-foreground font-mono select-none">
+                  {searchMatchInfo.total > 0
+                    ? `${searchMatchInfo.current}/${searchMatchInfo.total}`
+                    : "0/0"}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => onSearchChange("")}
+                className="p-1 text-muted-foreground hover:text-foreground rounded cursor-pointer"
+                title="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
         </div>
         <button
           type="button"
@@ -116,23 +153,79 @@ export const TopBar: React.FC<TopBarProps> = ({
         type="button"
         onClick={() => setIsMobileSearchOpen(true)}
         className="flex md:hidden p-2 rounded-full border border-border bg-card text-foreground-subtle hover:text-foreground shadow-2xs hover:border-border transition-all cursor-pointer items-center justify-center"
-        title="Search topics"
-        aria-label="Search topics"
+        title="Search in note"
+        aria-label="Search in note"
       >
         <Search className="w-3.5 h-3.5" />
       </button>
 
-      {/* Desktop Search Bar */}
+      {/* Desktop Search Bar (Dedicated to Editor) */}
       <div className="relative hidden md:flex items-center">
         <input
+          data-editor-search-input="true"
           type="text"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder=""
-          aria-label="Search syllabus topics"
-          className="w-36 lg:w-52 pl-4 pr-9 py-1.5 text-xs font-normal bg-card text-foreground placeholder-muted-foreground rounded-full border border-border shadow-xs focus:outline-none focus:border-accent transition-all font-manrope"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              if (e.shiftKey) {
+                onFindPrev?.();
+              } else {
+                onFindNext?.();
+              }
+            } else if (e.key === "Escape") {
+              onSearchChange("");
+            }
+          }}
+          placeholder={searchPlaceholder}
+          aria-label="Search in note"
+          className={`${
+            searchQuery ? "w-44 lg:w-48 pr-20" : "w-36 pr-7.5"
+          } pl-3.5 py-1.5 text-xs font-normal bg-card text-foreground placeholder-muted-foreground rounded-full border border-border shadow-xs focus:outline-none focus:border-accent transition-all font-manrope`}
         />
-        <Search className="absolute right-3.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+
+        {searchQuery ? (
+          <div className="absolute right-2 flex items-center gap-0.5">
+            {searchMatchInfo && (
+              <span className="text-[10px] text-muted-foreground font-mono select-none px-1">
+                {searchMatchInfo.total > 0
+                  ? `${searchMatchInfo.current}/${searchMatchInfo.total}`
+                  : "0/0"}
+              </span>
+            )}
+            {searchMatchInfo && searchMatchInfo.total > 1 && (
+              <div className="flex items-center">
+                <button
+                  type="button"
+                  onClick={onFindPrev}
+                  className="p-0.5 text-muted-foreground hover:text-foreground rounded hover:bg-subtle cursor-pointer"
+                  title="Previous match (Shift+Enter)"
+                >
+                  <ChevronUp className="w-3 h-3" />
+                </button>
+                <button
+                  type="button"
+                  onClick={onFindNext}
+                  className="p-0.5 text-muted-foreground hover:text-foreground rounded hover:bg-subtle cursor-pointer"
+                  title="Next match (Enter)"
+                >
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => onSearchChange("")}
+              className="p-0.5 text-muted-foreground hover:text-foreground rounded-full hover:bg-subtle cursor-pointer transition-colors"
+              title="Clear search"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        ) : (
+          <Search className="absolute right-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+        )}
       </div>
 
       {/* Theme Toggle */}

@@ -770,3 +770,40 @@ ul.contains-task-list li[data-checked="true"] > div {
   background-color: #854d0e;
   color: #fef08a;
 }
+
+/* Editor Search Highlights */
+.editor-search-match {
+  background-color: rgba(250, 204, 21, 0.45);
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(234, 179, 8, 0.45);
+  transition: background-color 0.15s ease;
+}
+
+.dark .editor-search-match {
+  background-color: rgba(234, 179, 8, 0.35);
+  box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.3);
+}
+
+[data-theme="sepia"] .editor-search-match {
+  background-color: rgba(217, 119, 6, 0.25);
+  box-shadow: 0 0 0 1px rgba(217, 119, 6, 0.35);
+}
+
+.editor-search-match-active {
+  background-color: #f97316 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 0 2px rgba(194, 65, 12, 0.6) !important;
+  border-radius: 2px;
+}
+
+.dark .editor-search-match-active {
+  background-color: #ea580c !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 0 2px rgba(251, 146, 60, 0.7) !important;
+}
+
+[data-theme="sepia"] .editor-search-match-active {
+  background-color: #d97706 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 0 2px rgba(180, 83, 9, 0.8) !important;
+}

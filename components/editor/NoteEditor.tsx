@@ -50,6 +50,8 @@ import {
   DefinitionDescription,
   MarkdownPlugins,
   getEditorMarkdown,
+  SearchHighlight,
+  SearchHighlightPluginKey,
 } from "./extensions";
 import { EditorToolbar } from "./EditorToolbar";
 
@@ -63,6 +65,12 @@ interface NoteEditorProps {
   onRenameTopic?: (topicId: string, newTitle: string) => void;
   onBackToTree?: () => void;
   isActive?: boolean;
+  searchQuery?: string;
+  onSearchMatchChange?: (info: { current: number; total: number } | null) => void;
+  onRegisterSearchActions?: (actions: {
+    findNext: () => void;
+    findPrev: () => void;
+  }) => void;
 }
 
 export const NoteEditor: React.FC<NoteEditorProps> = ({
@@ -75,6 +83,9 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   onRenameTopic,
   onBackToTree,
   isActive = false,
+  searchQuery,
+  onSearchMatchChange,
+  onRegisterSearchActions,
 }) => {
   const [content, setContent] = useState<string>("");
   const [hasCopiedNotePrompt, setHasCopiedNotePrompt] =
@@ -207,6 +218,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           "Start writing notes, or use markdown shortcuts (# for heading, - for list, [ ] for todo)...",
       }),
       CustomShortcuts,
+      SearchHighlight,
       Markdown.configure({
         html: true,
         tightLists: true,
@@ -333,6 +345,76 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isActive, editor]);
+
+  // Synchronize search query with TipTap search highlighting
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    editor.commands.setSearchTerm(searchQuery || "");
+  }, [searchQuery, editor, selectedTopic?.id]);
+
+  // Synchronize match count and active index with parent
+  useEffect(() => {
+    if (!editor || editor.isDestroyed || !selectedTopic?.hasNote) {
+      if (searchQuery && searchQuery.trim()) {
+        onSearchMatchChange?.({ current: 0, total: 0 });
+      } else {
+        onSearchMatchChange?.(null);
+      }
+      return;
+    }
+
+    if (searchQuery && searchQuery.trim()) {
+      const pluginState = SearchHighlightPluginKey.getState(editor.state);
+      if (pluginState && pluginState.matches.length > 0) {
+        onSearchMatchChange?.({
+          current: pluginState.currentIndex + 1,
+          total: pluginState.matches.length,
+        });
+      } else {
+        onSearchMatchChange?.({ current: 0, total: 0 });
+      }
+    } else {
+      onSearchMatchChange?.(null);
+    }
+  }, [
+    searchQuery,
+    editor,
+    editor?.state,
+    selectedTopic?.id,
+    selectedTopic?.hasNote,
+    onSearchMatchChange,
+  ]);
+
+  // Register search actions for next/previous match navigation
+  useEffect(() => {
+    if (!editor || !onRegisterSearchActions) return;
+    onRegisterSearchActions({
+      findNext: () => {
+        if (!editor.isDestroyed) {
+          editor.commands.nextSearchMatch();
+        }
+      },
+      findPrev: () => {
+        if (!editor.isDestroyed) {
+          editor.commands.prevSearchMatch();
+        }
+      },
+    });
+  }, [editor, onRegisterSearchActions]);
+
+  // Auto-scroll active match into view
+  useEffect(() => {
+    if (!searchQuery?.trim()) return;
+    const timeout = setTimeout(() => {
+      const activeEl = editor?.view?.dom?.querySelector(
+        ".editor-search-match-active",
+      );
+      if (activeEl) {
+        activeEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 40);
+    return () => clearTimeout(timeout);
+  }, [searchQuery, editor?.state]);
 
   // Sync state and editor content when selected topic changes
   useEffect(() => {

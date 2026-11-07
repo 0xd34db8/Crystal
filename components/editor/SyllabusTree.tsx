@@ -12,6 +12,7 @@ import {
   Braces,
   Undo2,
   Redo2,
+  Search,
 } from "lucide-react";
 import { TreeContextMenu } from "./TreeContextMenu";
 import { JsonTreeEditor } from "./JsonTreeEditor";
@@ -30,6 +31,8 @@ interface SyllabusTreeProps {
   onUpdateTitle?: (title: string) => void;
   courseTitle?: string;
   searchQuery?: string;
+  onSearchChange?: (query: string) => void;
+  searchPlaceholder?: string;
   canUndo?: boolean;
   canRedo?: boolean;
   onUndo?: () => void;
@@ -49,12 +52,24 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
   onUpdateItems,
   onUpdateTitle,
   courseTitle,
-  searchQuery = "",
+  searchQuery,
+  onSearchChange,
+  searchPlaceholder = "Search topics...",
   canUndo = false,
   canRedo = false,
   onUndo,
   onRedo,
 }) => {
+  const [internalSearchQuery, setInternalSearchQuery] = useState("");
+
+  const activeSearchQuery =
+    searchQuery !== undefined ? searchQuery : internalSearchQuery;
+
+  const handleSearchChange = (query: string) => {
+    setInternalSearchQuery(query);
+    onSearchChange?.(query);
+  };
+
   const [isJsonMode, setIsJsonMode] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [addingSubtopicToId, setAddingSubtopicToId] = useState<string | null>(
@@ -119,6 +134,16 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
     }
   };
 
+  const itemMatchesQuery = (item: SyllabusItem, query: string): boolean => {
+    if (!query || !query.trim()) return true;
+    const q = query.trim().toLowerCase();
+    if (item.title.toLowerCase().includes(q)) return true;
+    if (item.children && item.children.length > 0) {
+      return item.children.some((child) => itemMatchesQuery(child, query));
+    }
+    return false;
+  };
+
   const renderTreeItem = (
     item: SyllabusItem,
     level: number = 0,
@@ -126,17 +151,12 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
   ) => {
     const hasChildren = Boolean(item.children && item.children.length > 0);
     const isSelected = item.id === selectedTopicId;
-    const isExpanded = item.isExpanded ?? false;
+    const isExpanded = activeSearchQuery && activeSearchQuery.trim()
+      ? true
+      : (item.isExpanded ?? false);
 
-    // Filter by search query if present
-    const matchesSearch =
-      !searchQuery ||
-      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (item.children &&
-        item.children.some((child) =>
-          child.title.toLowerCase().includes(searchQuery.toLowerCase()),
-        ));
-
+    // Filter by tree search query if present
+    const matchesSearch = itemMatchesQuery(item, activeSearchQuery);
     if (!matchesSearch) return null;
 
     return (
@@ -337,46 +357,96 @@ export const SyllabusTree: React.FC<SyllabusTreeProps> = ({
           onUpdateItems={onUpdateItems}
           onUpdateTitle={onUpdateTitle}
           onClose={handleToggleJsonMode}
+          searchQuery={activeSearchQuery}
+          onSearchChange={handleSearchChange}
+          searchPlaceholder={searchPlaceholder}
         />
       ) : (
         <div className="h-full flex flex-col p-4 overflow-y-auto select-none font-manrope">
           <div className="flex-1 space-y-1 pb-10">
-            {/* Top row with Undo, Redo, and JSON toggle buttons on the right */}
-            <div className="flex justify-end items-center gap-1 -mt-1 -mr-1 mb-1">
-              {onUndo && (
+            {/* Top row with permanent left-aligned search bar and right-aligned actions */}
+            <div className="flex items-center justify-between gap-2 -mt-1 -mr-1 mb-2.5">
+              {/* Permanent Search Bar aligned to the left */}
+              <div className="relative flex-1 max-w-[210px] flex items-center">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+                <input
+                  data-tree-search-input="true"
+                  type="text"
+                  value={activeSearchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      handleSearchChange("");
+                    }
+                  }}
+                  placeholder={searchPlaceholder}
+                  className="w-full pl-7 pr-6 py-1 text-xs bg-subtle/80 border border-border rounded-full outline-none focus:border-accent font-manrope text-foreground placeholder-muted-foreground transition-all shadow-2xs"
+                />
+                {activeSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => handleSearchChange("")}
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground hover:text-foreground rounded-full hover:bg-subtle cursor-pointer transition-colors"
+                    title="Clear search"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+
+              {/* Action buttons on the right: Undo, Redo, JSON */}
+              <div className="flex items-center gap-1 shrink-0">
+                {onUndo && (
+                  <button
+                    type="button"
+                    onClick={onUndo}
+                    disabled={!canUndo}
+                    className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-subtle disabled:opacity-25 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    title="Undo tree change (Ctrl+Z)"
+                    aria-label="Undo tree change"
+                  >
+                    <Undo2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {onRedo && (
+                  <button
+                    type="button"
+                    onClick={onRedo}
+                    disabled={!canRedo}
+                    className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-subtle disabled:opacity-25 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    title="Redo tree change (Ctrl+Y)"
+                    aria-label="Redo tree change"
+                  >
+                    <Redo2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={onUndo}
-                  disabled={!canUndo}
-                  className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-subtle disabled:opacity-25 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-colors cursor-pointer"
-                  title="Undo tree change (Ctrl+Z)"
-                  aria-label="Undo tree change"
+                  onClick={handleToggleJsonMode}
+                  className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-subtle transition-colors cursor-pointer"
+                  title="Edit tree as JSON"
+                  aria-label="Edit tree as JSON"
                 >
-                  <Undo2 className="w-3.5 h-3.5" />
+                  <Braces className="w-3.5 h-3.5" />
                 </button>
-              )}
-              {onRedo && (
-                <button
-                  type="button"
-                  onClick={onRedo}
-                  disabled={!canRedo}
-                  className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-subtle disabled:opacity-25 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-colors cursor-pointer"
-                  title="Redo tree change (Ctrl+Y)"
-                  aria-label="Redo tree change"
-                >
-                  <Redo2 className="w-3.5 h-3.5" />
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={handleToggleJsonMode}
-                className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-subtle transition-colors cursor-pointer"
-                title="Edit tree as JSON"
-                aria-label="Edit tree as JSON"
-              >
-                <Braces className="w-3.5 h-3.5" />
-              </button>
+              </div>
             </div>
+
+            {/* Empty state when tree search has no matches */}
+            {activeSearchQuery &&
+              activeSearchQuery.trim() &&
+              items.every((it) => !itemMatchesQuery(it, activeSearchQuery)) && (
+                <div className="py-6 text-center text-xs text-muted-foreground space-y-1.5">
+                  <p>No topics match &ldquo;{activeSearchQuery}&rdquo;</p>
+                  <button
+                    type="button"
+                    onClick={() => handleSearchChange("")}
+                    className="text-accent hover:underline text-xs cursor-pointer"
+                  >
+                    Clear search
+                  </button>
+                </div>
+              )}
 
             {items.map((item, idx) =>
               renderTreeItem(item, 0, idx === items.length - 1),
